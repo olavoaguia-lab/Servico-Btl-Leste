@@ -548,14 +548,14 @@
                 
                 <div class="charts-grid">
                     <div class="chart-container">
-                        <div class="chart-title"><i class="fas fa-building"></i> Distribuição por OPM</div>
+                        <div class="chart-title">🏢 Distribuição por OPM</div>
                         <div class="chart-wrapper">
                             <canvas id="opmChart"></canvas>
                         </div>
                     </div>
                     
                     <div class="chart-container">
-                        <div class="chart-title"><i class="fas fa-star"></i> Distribuição por Graduação</div>
+                        <div class="chart-title">⭐ Distribuição por Graduação</div>
                         <div class="chart-wrapper">
                             <canvas id="graduacaoChart"></canvas>
                         </div>
@@ -999,7 +999,7 @@
             
             const ws = XLSX.utils.json_to_sheet(currentData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Relatorio Filtrado");
+            XLSX.utils.book_append_sheet(wb, ws, "Controle Diário - Relatorio Filtrado");
             XLSX.writeFile(wb, "Controle_Diario_Relatorio_Exportado.xlsx");
             
             showAlert('⬇️ Relatório exportado com sucesso!');
