@@ -1,27 +1,769 @@
-unidadesChartInstance = new Chart(unidadesCtx, {
-                type: 'bar', // Continua sendo do tipo 'bar'
-                data: {
-                    labels: nomesUnidades,
-                    datasets: [
-                        // ... seus datasets ...
-                    ]
-                },
-                options: {
-                    indexAxis: 'y', // <--- ESTA É A LINHA CHAVE! Diz ao Chart.js para usar o eixo Y para os índices (categorias).
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { // O eixo X agora é o de VALORES
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Quantidade de Policiais'
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Unificado: Controle de Efetivo e Ocorrências</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        /* Combinação de Estilos: Prioriza a estética do código 1, incorporando variáveis do código 2 */
+        :root {
+            --primary-dark: #1f3d7a; /* Azul marinho escuro (Código 1) */
+            --primary-light: #2c509b; /* Azul royal (Código 1) */
+            --accent-color: #00bcd4; /* Ciano/Turquesa (Código 1) */
+            --danger: #d32f2f; /* Vermelho (Código 2) */
+            --success: #388e3c; /* Verde (Código 2) */
+            --bg-gradient: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-light) 100%);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: #f0f0f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Estrutura Principal */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            gap: 20px;
+            grid-template-columns: 1fr;
+        }
+
+        .header, .controls {
+            grid-column: 1 / -1;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            font-weight: 500;
+        }
+
+        .header .date-time {
+            text-align: right;
+        }
+
+        /* Controles */
+        .controls {
+            background-color: rgba(0, 0, 0, 0.2);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .control-group label {
+            margin-right: 10px;
+            font-weight: 300;
+        }
+        .control-group select, .control-group input[type="file"], .upload-btn {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: none;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+        }
+        .upload-btn {
+            background-color: var(--accent-color);
+            transition: background-color 0.3s;
+        }
+        .upload-btn:hover {
+            background-color: #008c99;
+        }
+        #csv-file-input {
+            display: none;
+        }
+
+        /* Cards e Gráficos */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
+            backdrop-filter: blur(5px);
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+
+        .card .value {
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        .chart-section {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-container {
+            height: 350px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Alertas e Loading */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .spinner {
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top: 5px solid var(--accent-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #alert-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            color: white;
+            box-shadow: var(--shadow-md);
+            z-index: 1001;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s, transform 0.5s;
+            transform: translateY(-50px);
+        }
+        #alert-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #alert-message.error { background-color: var(--danger); }
+        #alert-message.success { background-color: var(--success); }
+
+        /* Estilos do Gráfico de Efetivo (Código 2) */
+        .efetivo-status {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            text-align: center;
+        }
+        .status-item {
+            padding: 10px;
+            border-radius: 5px;
+            width: 30%;
+        }
+        .status-item.presente { background-color: rgba(56, 142, 60, 0.5); }
+        .status-item.ausente { background-color: rgba(211, 47, 47, 0.5); }
+        .status-item.total { background-color: rgba(44, 80, 155, 0.5); }
+        .status-item .status-value {
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+        .status-item .status-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        /* Responsividade */
+        @media (min-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            .chart-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (min-width: 1200px) {
+            .stats-grid {
+                grid-column: 1 / -1;
+            }
+            .header, .controls {
+                grid-column: 1 / -1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="alert-message"></div>
+
+    <div class="dashboard-container">
+
+        <header class="header">
+            <h1>Dashboard Unificado <i class="fas fa-chart-line"></i></h1>
+            <div class="date-time">
+                <span id="current-date"></span><br>
+                <span id="current-time" style="font-size: 0.9em;"></span>
+            </div>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <button id="upload-btn" class="upload-btn"><i class="fas fa-upload"></i> Carregar Arquivo Excel (.xlsx/.csv)</button>
+                <input type="file" id="csv-file-input" accept=".xlsx, .xls, .csv">
+            </div>
+
+            <div class="control-group">
+                <label for="unidade-select">Unidade:</label>
+                <select id="unidade-select">
+                    <option value="todas">Todas as Unidades</option>
+                    </select>
+            </div>
+
+            <div class="control-group">
+                <label for="data-select">Data:</label>
+                <select id="data-select">
+                    </select>
+            </div>
+            <div class="control-group">
+                 <span style="font-weight: 500;">Dados Atuais: <span id="data-turno-label">--</span></span>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="card">
+                <h3>Total de Ocorrências</h3>
+                <p class="value" id="total-ocorrencias">0</p>
+            </div>
+            <div class="card">
+                <h3>Média Diária</h3>
+                <p class="value" id="media-diaria">0.00</p>
+            </div>
+            <div class="card">
+                <h3>Efetivo Total (Dia)</h3>
+                <p class="value" id="efetivo-total-dia">0</p>
+            </div>
+            <div class="card">
+                <h3>VTRs em Serviço</h3>
+                <p class="value" id="vtr-servico">0</p>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            
+            <div class="chart-container">
+                <h3>Controle Simplificado de Efetivo <i class="fas fa-users"></i></h3>
+                <div class="efetivo-status">
+                    <div class="status-item total">
+                        <div class="status-value" id="efetivo-previsto">0</div>
+                        <div class="status-label">Total Previsto</div>
+                    </div>
+                    <div class="status-item presente">
+                        <div class="status-value" id="efetivo-presente">0</div>
+                        <div class="status-label">Presente</div>
+                    </div>
+                    <div class="status-item ausente">
+                        <div class="status-value" id="efetivo-faltas">0</div>
+                        <div class="status-label">Ausências / Faltas</div>
+                    </div>
+                </div>
+                <div style="height: 250px; margin-top: 10px;">
+                    <canvas id="efetivoChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>Ocorrências por Tipo <i class="fas fa-exclamation-triangle"></i></h3>
+                <canvas id="ocorrenciasChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3>Ocorrências por Período (Turno) <i class="far fa-clock"></i></h3>
+                <canvas id="periodoChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3>Ocorrências Detalhadas (Top 5) <i class="fas fa-list"></i></h3>
+                <div id="tabela-top-ocorrencias">
+                    <p style="text-align: center; margin-top: 50px;">Carregue os dados para visualizar.</p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // --- VARIÁVEIS GLOBAIS ---
+        let rawData = []; // Dados brutos da planilha (todos)
+        let processedData = {}; // Dados processados e agrupados por Unidade/Data
+        let currentFilters = {
+            unidade: 'todas',
+            data: null
+        };
+
+        // --- FUNÇÕES DE UTILIADE GERAIS (Código 1) ---
+
+        /** Exibe o overlay de loading. */
+        function showLoading(show) {
+            document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
+        }
+
+        /** Exibe um alerta temporário. */
+        function showAlert(message, type = 'success') {
+            const alertElement = document.getElementById('alert-message');
+            alertElement.textContent = message;
+            alertElement.className = `show ${type}`;
+            clearTimeout(alertElement.timer);
+            alertElement.timer = setTimeout(() => {
+                alertElement.className = '';
+            }, 3000);
+        }
+
+        /** Atualiza a data atual no cabeçalho. */
+        function updateCurrentDate() {
+            const dateElement = document.getElementById('current-date');
+            dateElement.textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        /** Atualiza a hora atual no cabeçalho. */
+        function updateDateTime() {
+            const timeElement = document.getElementById('current-time');
+            timeElement.textContent = new Date().toLocaleTimeString('pt-BR');
+        }
+
+        // --- FUNÇÕES DE PROCESSAMENTO DE DADOS (Adaptadas do Código 1) ---
+
+        /** Função principal para processar os dados do Excel/CSV. */
+        function processExcelData(data) {
+            if (data.length === 0) {
+                showAlert('A planilha está vazia ou não contém dados válidos.', 'error');
+                showLoading(false);
+                return;
+            }
+
+            rawData = data; // Armazena todos os dados brutos
+
+            // 1. Identifica Unidades e Datas únicas
+            const unidades = new Set();
+            const datas = new Set();
+
+            data.forEach(item => {
+                // Adaptação: Assume-se que as colunas chaves são 'Unidade', 'Data', 'Tipo_Ocorrencia', 'Efetivo_Previsto', 'Efetivo_Presente'
+                // O código deve usar os nomes exatos das colunas da planilha!
+                if (item.Unidade) unidades.add(item.Unidade);
+                if (item.Data) datas.add(item.Data); // Assumindo formato de data legível
+            });
+
+            // 2. Preenche os filtros Select (Código 2)
+            populateSelect('unidade-select', Array.from(unidades), 'todas', 'Todas as Unidades');
+            populateSelect('data-select', Array.from(datas).sort((a, b) => new Date(b) - new Date(a))); // Ordena por data mais recente
+
+            // 3. Agrupamento e processamento detalhado (simplificado para este exemplo)
+            // Em um código real, esta função faria o cálculo das métricas (somar ocorrências, faltas, etc.)
+            processedData = data; // Para este exemplo, usamos os dados brutos para simplificar.
+
+            // Define a data de filtro inicial
+            currentFilters.data = Array.from(datas).sort((a, b) => new Date(b) - new Date(a))[0] || null;
+            document.getElementById('data-select').value = currentFilters.data;
+            document.getElementById('data-turno-label').textContent = currentFilters.data ? new Date(currentFilters.data).toLocaleDateString('pt-BR') : '--';
+            
+            // 4. Atualiza o dashboard
+            updateDashboard(currentFilters);
+            showLoading(false);
+            showAlert('✅ Dados carregados e dashboard atualizado com sucesso!', 'success');
+        }
+
+        /** Preenche um <select> com opções. */
+        function populateSelect(elementId, items, defaultValue = null, defaultLabel = null) {
+            const selectElement = document.getElementById(elementId);
+            selectElement.innerHTML = ''; // Limpa as opções anteriores
+
+            if (defaultLabel !== null) {
+                const defaultOption = document.createElement('option');
+                defaultOption.value = defaultValue;
+                defaultOption.textContent = defaultLabel;
+                selectElement.appendChild(defaultOption);
+            }
+
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item;
+                option.textContent = item;
+                selectElement.appendChild(option);
+            });
+        }
+
+
+        // --- FUNÇÕES DE LEITURA DE ARQUIVO (Código 1) ---
+
+        /** Lida com a seleção de arquivo. */
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                showLoading(true);
+                readExcelFile(file);
+            }
+        }
+
+        /** Lê o arquivo Excel/CSV e converte para JSON. */
+        function readExcelFile(file) {
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if (jsonData.length === 0) {
+                        throw new Error('A planilha está vazia ou não contém dados');
+                    }
+                    
+                    // Converte strings de data que possam vir do Excel em Datas no formato YYYY-MM-DD
+                    const dataComDatasCorrigidas = jsonData.map(item => {
+                        if (item.Data && typeof item.Data === 'number') {
+                             // Se o Excel salvou como número serial (dias desde 1899-12-30)
+                            const date = new Date(Date.UTC(1899, 11, 30));
+                            date.setUTCDate(date.getUTCDate() + item.Data);
+                            item.Data = date.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+                        } else if (item.Data && typeof item.Data === 'string') {
+                            // Tenta parsear a string para YYYY-MM-DD
+                            const parsed = new Date(item.Data);
+                            if (!isNaN(parsed)) {
+                                item.Data = parsed.toISOString().split('T')[0];
                             }
-                        },
-                        y: { // O eixo Y agora é o de CATEGORIAS (nomes das unidades)
-                            beginAtZero: true
                         }
+                        return item;
+                    });
+
+
+                    processExcelData(dataComDatasCorrigidas);
+                    
+                } catch (error) {
+                    console.error('❌ Erro na leitura:', error);
+                    showAlert('❌ Erro ao ler arquivo: ' + error.message, 'error');
+                    showLoading(false);
+                }
+            };
+            
+            reader.onerror = function(error) {
+                console.error('❌ Erro no FileReader:', error);
+                showAlert('❌ Erro ao ler o arquivo selecionado', 'error');
+                showLoading(false);
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        // --- FUNÇÕES DE DASHBOARD (Adaptação de Códigos 1 e 2) ---
+
+        let ocorrenciasChartInstance = null;
+        let periodoChartInstance = null;
+        let efetivoChartInstance = null;
+
+        /** Inicializa e configura as instâncias dos gráficos Chart.js. */
+        function setupCharts() {
+            // Configuração comum para gráficos
+            const defaultOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: 'white' } }
+                },
+                scales: {
+                    x: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                    y: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' }, beginAtZero: true }
+                }
+            };
+
+            // 1. Gráfico de Ocorrências por Tipo (Código 1)
+            const ocorrenciasCtx = document.getElementById('ocorrenciasChart').getContext('2d');
+            if (ocorrenciasChartInstance) ocorrenciasChartInstance.destroy();
+            ocorrenciasChartInstance = new Chart(ocorrenciasCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [] },
+                options: { ...defaultOptions, indexAxis: 'y' }
+            });
+
+            // 2. Gráfico de Ocorrências por Período/Turno (Código 1)
+            const periodoCtx = document.getElementById('periodoChart').getContext('2d');
+            if (periodoChartInstance) periodoChartInstance.destroy();
+            periodoChartInstance = new Chart(periodoCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: { ...defaultOptions, tension: 0.4 }
+            });
+
+             // 3. Gráfico de Efetivo (Código 2) - Exemplo Simples de Barra
+             const efetivoCtx = document.getElementById('efetivoChart').getContext('2d');
+            if (efetivoChartInstance) efetivoChartInstance.destroy();
+            efetivoChartInstance = new Chart(efetivoCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Previsto', 'Presente', 'Faltas'],
+                    datasets: [{
+                        label: 'Controle de Efetivo',
+                        data: [0, 0, 0], // Valores iniciais
+                        backgroundColor: [
+                            'rgba(44, 80, 155, 0.8)', // Azul (Total)
+                            'rgba(56, 142, 60, 0.8)',  // Verde (Presente)
+                            'rgba(211, 47, 47, 0.8)'   // Vermelho (Ausente/Faltas)
+                        ],
+                        borderColor: 'white',
+                        borderWidth: 1
+                    }]
+                },
+                options: { 
+                    ...defaultOptions, 
+                    indexAxis: 'x',
+                    scales: {
+                         x: { ticks: { color: 'white' }, grid: { display: false } },
+                         y: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' }, beginAtZero: true, max: 100 } // Ajustar o max dinamicamente
                     },
-                    plugins: { legend: { position: 'top' } }
+                    plugins: { legend: { display: false } }
                 }
             });
+        }
+
+
+        /** Filtra os dados e recalcula as métricas para atualização do dashboard. */
+        function updateDashboard(filters) {
+            // 1. Filtra os dados brutos com base na Unidade e Data
+            let filteredData = rawData.filter(item => {
+                const matchesUnidade = filters.unidade === 'todas' || item.Unidade === filters.unidade;
+                const matchesData = !filters.data || item.Data === filters.data;
+                return matchesUnidade && matchesData;
+            });
+            
+            // Se não houver dados filtrados, exibe zeros
+            if (filteredData.length === 0) {
+                 // Reseta todas as métricas e gráficos para 0/vazio
+                 document.getElementById('total-ocorrencias').textContent = 0;
+                 document.getElementById('media-diaria').textContent = '0.00';
+                 document.getElementById('efetivo-total-dia').textContent = 0;
+                 document.getElementById('vtr-servico').textContent = 0;
+
+                 document.getElementById('efetivo-previsto').textContent = 0;
+                 document.getElementById('efetivo-presente').textContent = 0;
+                 document.getElementById('efetivo-faltas').textContent = 0;
+
+                 updateCharts({ ocorrencias: {}, periodo: {}, efetivo: { previsto: 0, presente: 0, faltas: 0 } });
+                 document.getElementById('tabela-top-ocorrencias').innerHTML = '<p style="text-align: center; margin-top: 50px;">Nenhum dado encontrado para os filtros selecionados.</p>';
+                 return;
+            }
+
+            // 2. Cálculos das Métricas e Gráficos
+            let totalOcorrencias = filteredData.length;
+            let totalDias = new Set(filteredData.map(item => item.Data)).size || 1;
+            let mediaDiaria = totalOcorrencias / totalDias;
+            
+            // Exemplo simplificado de Efetivo: Soma o previsto e o presente e calcula faltas (apenas para a data e unidade filtrada)
+            const efetivoPrevisto = filteredData.reduce((sum, item) => sum + (parseInt(item.Efetivo_Previsto) || 0), 0);
+            const efetivoPresente = filteredData.reduce((sum, item) => sum + (parseInt(item.Efetivo_Presente) || 0), 0);
+            const efetivoFaltas = efetivoPrevisto - efetivoPresente; // Simplificado: Ausente = Previsto - Presente
+
+            // Cálculos para Gráficos
+            const ocorrenciasPorTipo = filteredData.reduce((acc, item) => {
+                const tipo = item.Tipo_Ocorrencia || 'Não Informado';
+                acc[tipo] = (acc[tipo] || 0) + 1;
+                return acc;
+            }, {});
+
+            const ocorrenciasPorPeriodo = filteredData.reduce((acc, item) => {
+                const periodo = item.Periodo || 'Indefinido';
+                acc[periodo] = (acc[periodo] || 0) + 1;
+                return acc;
+            }, {});
+
+            // 3. Atualiza os Cards de Estatísticas (Código 1)
+            document.getElementById('total-ocorrencias').textContent = totalOcorrencias;
+            document.getElementById('media-diaria').textContent = mediaDiaria.toFixed(2);
+            // 'Efetivo Total (Dia)' e 'VTRs em Serviço' são placeholders. No código real, precisariam de dados da planilha.
+            document.getElementById('efetivo-total-dia').textContent = efetivoPresente; // Usando presente como o total do dia
+            document.getElementById('vtr-servico').textContent = (filteredData.reduce((sum, item) => sum + (parseInt(item.VTRs_Servico) || 0), 0) / totalDias).toFixed(0);
+
+
+            // 4. Atualiza o Gráfico de Efetivo (Código 2)
+            document.getElementById('efetivo-previsto').textContent = efetivoPrevisto;
+            document.getElementById('efetivo-presente').textContent = efetivoPresente;
+            document.getElementById('efetivo-faltas').textContent = efetivoFaltas >= 0 ? efetivoFaltas : 0;
+            
+            // 5. Atualiza todos os gráficos
+            updateCharts({
+                ocorrencias: ocorrenciasPorTipo,
+                periodo: ocorrenciasPorPeriodo,
+                efetivo: { previsto: efetivoPrevisto, presente: efetivoPresente, faltas: efetivoFaltas }
+            });
+
+            // 6. Atualiza Tabela (Manutenção do Código 1)
+            updateTopOcorrencias(ocorrenciasPorTipo);
+        }
+
+        /** Atualiza os gráficos do Chart.js. */
+        function updateCharts(data) {
+            // A. Gráfico de Ocorrências por Tipo (Código 1)
+            ocorrenciasChartInstance.data.labels = Object.keys(data.ocorrencias);
+            ocorrenciasChartInstance.data.datasets = [{
+                label: 'Ocorrências',
+                data: Object.values(data.ocorrencias),
+                backgroundColor: 'rgba(0, 188, 212, 0.8)', // var(--accent-color)
+                borderColor: 'white',
+                borderWidth: 1
+            }];
+            ocorrenciasChartInstance.update();
+
+            // B. Gráfico de Ocorrências por Período (Código 1)
+            // Assumindo períodos fixos para ordenação (ex: Manhã, Tarde, Noite)
+            const periodosOrdenados = ['Manhã', 'Tarde', 'Noite', 'Madrugada', 'Indefinido'];
+            const labelsPeriodo = periodosOrdenados.filter(p => data.periodo[p] !== undefined);
+            const dadosPeriodo = labelsPeriodo.map(p => data.periodo[p] || 0);
+
+            periodoChartInstance.data.labels = labelsPeriodo;
+            periodoChartInstance.data.datasets = [{
+                label: 'Total de Ocorrências',
+                data: dadosPeriodo,
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderColor: 'white',
+                borderWidth: 2,
+                pointBackgroundColor: 'var(--accent-color)'
+            }];
+            periodoChartInstance.update();
+            
+            // C. Gráfico de Efetivo Simplificado (Código 2)
+            const efetivoData = [
+                data.efetivo.previsto,
+                data.efetivo.presente,
+                data.efetivo.faltas >= 0 ? data.efetivo.faltas : 0 // Garante que faltas não seja negativo
+            ];
+            efetivoChartInstance.data.datasets[0].data = efetivoData;
+            efetivoChartInstance.options.scales.y.max = Math.max(data.efetivo.previsto, data.efetivo.presente) + 5; // Ajusta o máximo
+            efetivoChartInstance.update();
+        }
+
+        /** Cria uma tabela simples para as Top Ocorrências. */
+        function updateTopOcorrencias(ocorrenciasPorTipo) {
+            const container = document.getElementById('tabela-top-ocorrencias');
+            const sortedOcorrencias = Object.entries(ocorrenciasPorTipo)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 5); // Pega as Top 5
+
+            if (sortedOcorrencias.length === 0) {
+                container.innerHTML = '<p style="text-align: center; margin-top: 50px;">Nenhuma ocorrência encontrada para os filtros.</p>';
+                return;
+            }
+
+            let html = `
+                <table style="width: 100%; border-collapse: collapse; color: white; font-size: 0.9em;">
+                    <thead>
+                        <tr style="background-color: rgba(255, 255, 255, 0.15);">
+                            <th style="padding: 10px; text-align: left;">Tipo de Ocorrência</th>
+                            <th style="padding: 10px; text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            sortedOcorrencias.forEach(([tipo, total]) => {
+                html += `
+                    <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                        <td style="padding: 10px; text-align: left;">${tipo}</td>
+                        <td style="padding: 10px; text-align: right; font-weight: bold;">${total}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML = html;
+        }
+
+
+        // --- FUNÇÕES DE CONTROLE DE EVENTOS (Adaptadas do Código 2) ---
+
+        function setupEventListeners() {
+            const fileInput = document.getElementById('csv-file-input');
+            const unidadeSelect = document.getElementById('unidade-select');
+            const dataSelect = document.getElementById('data-select');
+
+            // Dispara o file input ao clicar no botão
+            document.getElementById('upload-btn').addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Lida com a seleção do arquivo
+            fileInput.addEventListener('change', handleFileSelect);
+
+            // Lida com a mudança no filtro de Unidade
+            unidadeSelect.addEventListener('change', function() {
+                currentFilters.unidade = this.value;
+                updateDashboard(currentFilters);
+            });
+
+            // Lida com a mudança no filtro de Data
+            dataSelect.addEventListener('change', function() {
+                currentFilters.data = this.value;
+                document.getElementById('data-turno-label').textContent = new Date(this.value).toLocaleDateString('pt-BR');
+                updateDashboard(currentFilters);
+            });
+        }
+
+
+        // --- INICIALIZAÇÃO GERAL ---
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurrentDate();
+            updateDateTime();
+            setInterval(updateDateTime, 60000); // Atualiza o relógio a cada minuto
+            setupCharts(); // Inicializa os gráficos vazios
+            setupEventListeners(); // Configura os event listeners
+
+            // Inicializa o dashboard com dados vazios até que o usuário faça o upload
+            updateDashboard({ unidade: 'todas', data: null }); 
+        });
+    </script>
+</body>
+</html>
