@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Serviço Ordinário - Batalhão Leste</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Serviço Ordinário - Batalhão Leste</title> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
@@ -394,41 +393,36 @@
         let allUniqueUnitsData = {}; 
 
         const corporateColors = [
-            '#1f3d7a',  // Dark Blue
-            '#00BCD4',  // Cyan
-            '#388E3C',  // Green (Success)
-            '#FFA000',  // Orange (Warning)
-            '#D32F2F',  // Red (Danger)
-            '#2c509b',  // Royal Blue
+            '#1f3d7a',  
+            '#00BCD4',  
+            '#388E3C',  
+            '#FFA000',  
+            '#D32F2F',  
+            '#2c509b',  
             '#8BC34A',  
             '#FF8A65',  
             '#536DFE',  
             '#FDD835'   
         ];
         
-        // Mapeamento de colunas (Baseado no seu 'Controle Serviço Ordinário - Página1.csv')
+        // Mapeamento de colunas
         const columnMap = {
             Unidade: ['Unidade', 'unidade', 'OPM'],
-            Tipo_Servico: ['Tipo de Serviço', 'TipoServico'],
             Graduacao: ['Graduação', 'graduacao'],
             Nome_Guerra: ['Nome de Guerra', 'NomeGuerra', 'Nome'],
             Local_Atuacao: ['Local de Atuação', 'LocalAtuacao', 'Local'],
             Status_Efetivo: ['Status do Efetivo', 'StatusEfetivo', 'Status'],
-            // Corrigido para garantir que correspondem aos nomes dos campos no sampleData
-            VTR_Total: ['VTR (Total)', 'VTRTotal'],
-            POG_Total: ['POG (Total)', 'POGTotal']
+            // Chaves específicas para VTR e POG (nomes literais do seu CSV)
+            VTR_TOTAL_KEY: 'VTR (Total)',
+            POG_TOTAL_KEY: 'POG (Total)'
         };
 
         // --- FUNÇÕES DE UTILIDADE E ALERTA ---
         function findColumn(row, keys) {
             for (const key of keys) {
-                // Tenta encontrar a chave exata
-                if (row.hasOwnProperty(key)) {
-                    return String(row[key]).toUpperCase().trim();
-                }
-                // Tenta encontrar a chave com variações de espaço ou caixa
+                // Procura por correspondência exata ou ignorando caixa/espaços extras
                 for (const existingKey in row) {
-                    if (existingKey.toUpperCase().trim() === key.toUpperCase().trim()) {
+                    if (String(existingKey).toUpperCase().trim() === key.toUpperCase().trim()) {
                         return String(row[existingKey]).toUpperCase().trim();
                     }
                 }
@@ -447,12 +441,13 @@
         }
         
         function showLoading(show = true) {
+            // Placeholder para um spinner de carregamento visual, se necessário
             console.log(show ? 'Carregando...' : 'Carregamento concluído.');
         }
 
         // --- DADOS DE AMOSTRA PARA INICIALIZAÇÃO CORRIGIDOS ---
         function loadSampleData() {
-            // Os nomes das chaves aqui DEVEM corresponder exatamente aos nomes de coluna no seu CSV
+            // As chaves VTR (Total) e POG (Total) devem corresponder exatamente à colunaMap
             const sampleData = [
                 { "Unidade": "BATALHÃO LESTE", "Graduação": "MAJOR", "Nome de Guerra": "BRAVO", "Local de Atuação": "Comando", "Status do Efetivo": "PRESENTE", "VTR (Total)": 5, "POG (Total)": 5 },
                 { "Unidade": "BATALHÃO LESTE", "Graduação": "CAPITÃO", "Nome de Guerra": "ALFA", "Local de Atuação": "Comando", "Status do Efetivo": "DE FÉRIAS", "VTR (Total)": 5, "POG (Total)": 5 },
@@ -484,20 +479,23 @@
                     const unit = findColumn(row, columnMap.Unidade);
                     const status = findColumn(row, columnMap.Status_Efetivo);
                     
-                    // CORREÇÃO: Tenta encontrar o valor de VTR/POG usando a chave literal (mais segura)
-                    const vtrValue = row[columnMap.VTR_Total[0]] !== undefined ? row[columnMap.VTR_Total[0]] : 0;
-                    const pogValue = row[columnMap.POG_Total[0]] !== undefined ? row[columnMap.POG_Total[0]] : 0;
-                    
-                    // Garante que o valor lido do campo de VTR/POG (seja do CSV ou do sample) seja tratado como número
-                    const vtrTotal = parseFloat(String(vtrValue).replace(',', '.') || 0); 
-                    const pogTotal = parseFloat(String(pogValue).replace(',', '.') || 0);
+                    // Lê VTR/POG usando a chave literal (mais segura) e trata como número
+                    const getNumericValue = (key) => {
+                        // Tenta encontrar o valor pela chave exata ou pela chave normalizada
+                        const value = row[key] !== undefined ? row[key] : (row[key.toUpperCase()] !== undefined ? row[key.toUpperCase()] : 0);
+                        
+                        // Garante que o valor seja tratado como float, substituindo vírgula por ponto
+                        return parseFloat(String(value).replace(',', '.') || 0);
+                    }
+
+                    const vtrTotal = getNumericValue(columnMap.VTR_TOTAL_KEY); 
+                    const pogTotal = getNumericValue(columnMap.POG_TOTAL_KEY);
 
                     if (unit) {
                         validUnidades.add(unit);
                         validGraduacoes.add(findColumn(row, columnMap.Graduacao));
 
                         // Armazena VTR/POG da unidade (a última ocorrência prevalece para a unidade)
-                        // A unidade é salva em caixa alta
                         allUniqueUnitsData[unit] = {
                             VTR: vtrTotal,
                             POG: pogTotal
@@ -518,7 +516,6 @@
                     };
                 }).filter(row => row.Unidade && row.Graduacao && row.Status_Efetivo); 
                 
-                // Finaliza o processamento
                 if (fullData.length === 0) {
                     throw new Error('Nenhum dado válido encontrado. Verifique os cabeçalhos da planilha.');
                 }
@@ -546,13 +543,12 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    // Ler com cabeçalho implícito (pode lidar melhor com colunas vazias iniciais)
+                    
+                    // Lê os dados, usando a primeira linha com dados como cabeçalho
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
                     
                     if (jsonData.length === 0) throw new Error('Planilha vazia.');
                     
-                    // A função sheet_to_json já tenta adivinhar o cabeçalho.
-                    // Passamos os dados diretamente para processExcelData
                     processExcelData(jsonData);
                     showAlert(`Planilha '${file.name}' carregada com sucesso!`, 'success');
                     
@@ -572,9 +568,9 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- FUNÇÕES DE FILTROS, MÉTRICAS E GRÁFICOS (MANTIDAS) ---
+        // --- FUNÇÕES DE FILTROS, MÉTRICAS, GRÁFICOS E TABELAS (Mantidas) ---
 
-        function updateFilters(unidades, graduacoes) {
+        function updateFilters(unidades, graduacoes) { 
             const hierarchy = ["CEL", "TEN CEL", "MAJ", "CAP", "TEN", "ASP", "SUB TEN", "SGT", "CB", "SD", "AL", "POG", "CIVIL"];
             const customSort = (a, b) => {
                 const mapGrad = (g) => {
@@ -603,7 +599,7 @@
             populateSelect('graduacaoFilter', graduacoes, customSort);
         }
 
-        function filterDashboard() {
+        function filterDashboard() { 
             const unidadeValue = document.getElementById('unidadeFilter').value;
             const graduacaoValue = document.getElementById('graduacaoFilter').value;
             const statusValue = document.getElementById('statusFilter').value;
@@ -618,13 +614,13 @@
             updateDashboardVisuals();
         }
         
-        function updateDashboardVisuals() {
+        function updateDashboardVisuals() { 
             updateMetrics();
             updateCharts();
             updateDataTable();
         }
 
-        function updateMetrics() {
+        function updateMetrics() { 
             const totalEfetivo = currentData.reduce((sum, row) => sum + row.Efetivo_Previsto, 0);
             const presente = currentData.reduce((sum, row) => sum + row.Efetivo_Presente, 0);
             const ausente = currentData.reduce((sum, row) => sum + row.Efetivo_Ausente, 0);
@@ -648,7 +644,7 @@
             document.getElementById('totalPOGValue').textContent = totalPOG;
         }
 
-        function getChartData(key) {
+        function getChartData(key) { 
             const counts = {};
             currentData.forEach(row => {
                 const value = row[key];
@@ -664,7 +660,7 @@
             };
         }
 
-        function createOrUpdateChart(chartId, key, type, limit = 0) {
+        function createOrUpdateChart(chartId, key, type, limit = 0) { 
             let { labels, data } = getChartData(key);
             
             if (limit > 0 && labels.length > limit) {
@@ -681,10 +677,10 @@
             let backgroundColors = [];
             if (key === 'Status_Efetivo') {
                  labels.forEach(label => {
-                    if (label === 'PRESENTE') backgroundColors.push(corporateColors[2]); // Green
-                    else if (label === 'DE FÉRIAS' || label === 'LICENÇA') backgroundColors.push(corporateColors[3]); // Orange
-                    else if (label === 'AFASTADO') backgroundColors.push(corporateColors[4]); // Red
-                    else backgroundColors.push(corporateColors[5]); // Royal Blue
+                    if (label === 'PRESENTE') backgroundColors.push(corporateColors[2]);
+                    else if (label === 'DE FÉRIAS' || label === 'LICENÇA') backgroundColors.push(corporateColors[3]);
+                    else if (label === 'AFASTADO') backgroundColors.push(corporateColors[4]);
+                    else backgroundColors.push(corporateColors[5]);
                 });
             } else {
                 backgroundColors = corporateColors.slice(0, labels.length);
@@ -723,12 +719,12 @@
             });
         }
 
-        function updateCharts() {
+        function updateCharts() { 
             createOrUpdateChart('statusChart', 'Status_Efetivo', 'doughnut');
             createOrUpdateChart('unidadeChart', 'Unidade', 'bar', 10);
         }
 
-        function updateDataTable() {
+        function updateDataTable() { 
             const tbody = document.getElementById('dataTableBody');
             tbody.innerHTML = '';
 
@@ -761,7 +757,6 @@
             });
             document.getElementById('excelFileInput').addEventListener('change', handleFileSelect);
             
-            // Tenta carregar os dados de amostra na inicialização
             loadSampleData(); 
         }
 
