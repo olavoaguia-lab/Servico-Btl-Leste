@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Controle de Efetivo (Snapshot Diário)</title>
+    <title>Dashboard Serviço Ordinário - Batalhão Leste</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -131,8 +131,8 @@
             #tabela-detalhada-efetivo-container {
                 grid-column: span 2;
             }
-            /* Tabela Top Locais ocupando uma coluna na segunda linha */
-            #tabela-top-locais-container {
+            /* Gráfico Top Locais ocupando uma coluna na segunda linha */
+            #top-locais-chart-container {
                 grid-column: span 1;
             }
         }
@@ -149,7 +149,7 @@
     <div class="dashboard-container">
 
         <header class="header">
-            <h2>Controle de Efetivo PM - Snapshot Diário <i class="fas fa-calendar-day"></i></h2>
+            <h2>Serviço Ordinário - Batalhão Leste <i class="fas fa-calendar-day"></i></h2>
             <div class="date-time">
                 <span id="current-date"></span><br>
                 <span id="current-time" style="font-size: 0.9em;"></span>
@@ -207,10 +207,10 @@
                 </div>
             </div>
 
-            <div class="chart-container" id="tabela-top-locais-container">
+            <div class="chart-container" id="top-locais-chart-container">
                 <h3>Top Locais/Setores de Atuação <i class="fas fa-map-marker-alt"></i></h3>
-                <div id="tabela-top-locais" style="max-height: 300px; overflow-y: auto;">
-                    <p style="text-align: center; margin-top: 50px;">Carregue os dados para visualizar.</p>
+                <div style="height: 300px;">
+                    <canvas id="topLocaisChart"></canvas>
                 </div>
             </div>
             
@@ -230,7 +230,6 @@
         let rawData = []; 
         let currentFilters = {
             unidade: 'todas'
-            /* Filtro de Data Removido */
         };
         
         // --- FUNÇÕES DE UTILIADE GERAIS ---
@@ -319,30 +318,37 @@
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
                     
-                    // Usa header: 1 para tentar lidar com arquivos CSV/Excel com linhas em branco iniciais
+                    // Usa header: 1 para lidar com arquivos CSV/Excel com linhas em branco iniciais
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     
                     if (jsonData.length < 2) {
                         throw new Error('A planilha está vazia ou não contém cabeçalhos/dados');
                     }
                     
-                    // Encontra a linha de cabeçalho correta (esperando encontrar 'Unidade')
+                    // Encontra a linha de cabeçalho correta
                     let headerRowIndex = -1;
-                    const expectedHeaders = ['Unidade', 'Graduacao', 'Nome de Guerra', 'Identidade', 'Local de Atuacao', 'Status do Efetivo', 'VTRs em Serviço (Total da Unidade)'];
 
                     for (let i = 0; i < jsonData.length; i++) {
-                        if (Array.isArray(jsonData[i]) && jsonData[i].includes('Unidade')) {
+                        // Verifica se 'Unidade' está presente no array de células
+                        if (Array.isArray(jsonData[i]) && jsonData[i].some(cell => String(cell).trim().toUpperCase() === 'UNIDADE')) {
                             headerRowIndex = i;
                             break;
                         }
                     }
 
                     if (headerRowIndex === -1) {
-                         throw new Error('Não foi possível encontrar o cabeçalho "Unidade" na planilha.');
+                         throw new Error('Não foi possível encontrar o cabeçalho "Unidade" na planilha. Verifique se os cabeçalhos estão na primeira linha preenchida.');
                     }
                     
                     // Mapeia os dados usando o cabeçalho correto
-                    const headers = jsonData[headerRowIndex].map(h => h.trim().replace(/\s+/g, '_').replace('_(Total_da_Unidade)', '').replace('VTRs_em_Serviço', 'VTRs_Servico'));
+                    // Normaliza os nomes das colunas removendo acentos, espaços e substituindo 'VTRs em Serviço (Total da Unidade)' por 'VTRs_Servico'
+                    const headers = jsonData[headerRowIndex].map(h => {
+                        if (!h) return '';
+                        let normalized = h.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        normalized = normalized.replace(/\s+/g, '_');
+                        normalized = normalized.replace('VTRs_em_Servico_(Total_da_Unidade)', 'VTRs_Servico');
+                        return normalized;
+                    });
                     
                     let dataToProcess = [];
                     for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
@@ -350,16 +356,19 @@
                         if (Array.isArray(row) && row.some(cell => cell && String(cell).trim() !== '')) { // Ignora linhas completamente vazias
                             let item = {};
                             headers.forEach((header, index) => {
-                                item[header] = row[index] !== undefined ? row[index] : '';
+                                if (header) {
+                                    item[header] = row[index] !== undefined ? row[index] : '';
+                                }
                             });
-                             if (item.Unidade) dataToProcess.push(item);
+                             // Apenas adiciona se tiver um valor para 'Unidade'
+                             if (item.Unidade && String(item.Unidade).trim() !== '') dataToProcess.push(item);
                         }
                     }
 
                     // Normaliza os dados
                     const normalizedData = dataToProcess.map(item => {
                         // Normaliza status e calcula efetivo
-                        item.Status_Efetivo = item.Status_Efetivo ? String(item.Status_Efetivo).toUpperCase().trim() : 'NAO INFORMADO';
+                        item.Status_Efetivo = item.Status_do_Efetivo ? String(item.Status_do_Efetivo).toUpperCase().trim() : 'NAO INFORMADO';
                         item.Efetivo_Presente = item.Status_Efetivo === 'PRESENTE' ? 1 : 0;
                         item.Efetivo_Ausente = item.Status_Efetivo !== 'PRESENTE' ? 1 : 0;
                         item.Efetivo_Previsto = 1; 
@@ -368,6 +377,10 @@
                         item.Identidade = item.Identidade ? String(item.Identidade) : '--';
                         item.VTRs_Servico = parseInt(item.VTRs_Servico) || 0; 
 
+                        // Renomeia chaves de volta para o padrão esperado no dashboard (devido à normalização do cabeçalho)
+                        item.Nome_Guerra = item.Nome_de_Guerra || '--';
+                        item.Local_Atuacao = item.Local_de_Atuacao || '--';
+                        
                         return item;
                     });
 
@@ -394,6 +407,7 @@
 
         let efetivoChartInstance = null;
         let graduacaoChartInstance = null;
+        let topLocaisChartInstance = null; // Nova instância para o Gráfico de Top Locais
 
 
         /** Inicializa e configura as instâncias dos gráficos Chart.js. */
@@ -441,12 +455,33 @@
                 data: { labels: [], datasets: [] },
                 options: { ...defaultOptions } 
             });
+
+            // 3. Top Locais de Atuação - HORIZONTAL BAR Chart (NOVO)
+            const locaisCtx = document.getElementById('topLocaisChart').getContext('2d');
+            if (topLocaisChartInstance) topLocaisChartInstance.destroy();
+            topLocaisChartInstance = new Chart(locaisCtx, {
+                type: 'bar', 
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y', // Define o eixo como horizontal
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: false }
+                    },
+                    scales: {
+                        x: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' }, beginAtZero: true },
+                        y: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
+                    }
+                }
+            });
         }
 
 
         /** Filtra os dados e recalcula as métricas para atualização do dashboard. */
         function updateDashboard(filters) {
-            // 1. Filtra os dados brutos com base na Unidade (Filtro de Data Removido)
+            // 1. Filtra os dados brutos com base na Unidade (Snapshot Diário, sem filtro de Data)
             let filteredData = rawData.filter(item => {
                 const matchesUnidade = filters.unidade === 'todas' || item.Unidade === filters.unidade;
                 return matchesUnidade;
@@ -458,8 +493,7 @@
             const totalPresente = filteredData.reduce((sum, item) => sum + (item.Efetivo_Presente || 0), 0);
             const totalAusente = totalPrevisto - totalPresente;
             
-            // VTRs: Pega o valor máximo de VTRs_Servico na unidade filtrada (assumindo que VTRs é um valor único por Unidade no snapshot)
-            // Se for "Todas", ele soma os valores máximos por unidade
+            // VTRs: Soma os valores máximos de VTRs_Servico por unidade
             let totalVTRs = 0;
             if (filters.unidade === 'todas') {
                  const vtrsPorUnidade = filteredData.reduce((acc, item) => {
@@ -474,7 +508,7 @@
 
             // Cálculos para Gráficos e Tabelas
             
-            // Efetivo por Graduação
+            // Efetivo por Graduação (APENAS PRESENTE)
             const efetivoPorGraduacao = filteredData
                 .filter(item => item.Efetivo_Presente === 1)
                 .reduce((acc, item) => {
@@ -483,7 +517,7 @@
                     return acc;
                 }, {});
 
-            // Efetivo por Local de Atuação
+            // Efetivo por Local de Atuação (APENAS PRESENTE)
             const efetivoPorLocal = filteredData
                  .filter(item => item.Efetivo_Presente === 1)
                 .reduce((acc, item) => {
@@ -504,12 +538,11 @@
             updateCharts({
                 presente: totalPresente,
                 ausente: totalAusente,
-                graduacao: efetivoPorGraduacao
+                graduacao: efetivoPorGraduacao,
+                locais: efetivoPorLocal // Passa os dados de Locais
             });
 
-            // 5. Atualiza Tabelas (Locais de Atuação e Detalhamento)
-            updateTopLocais(efetivoPorLocal);
-            // Agora usa Identidade na Tabela Detalhada
+            // 5. Atualiza Tabela Detalhada
             updateTabelaDetalhada(filteredData);
 
             // Reseta se não houver dados.
@@ -518,7 +551,7 @@
                  document.getElementById('efetivo-presente-dia-card').textContent = 0;
                  document.getElementById('efetivo-ausente-dia-card').textContent = 0;
                  document.getElementById('vtr-servico').textContent = 0;
-                 updateCharts({ presente: 0, ausente: 0, graduacao: {} });
+                 updateCharts({ presente: 0, ausente: 0, graduacao: {}, locais: {} });
             }
         }
 
@@ -540,50 +573,29 @@
             graduacaoChartInstance.data.datasets = [{
                 label: 'Efetivo Ativo',
                 data: gradData,
-                backgroundColor: 'rgba(0, 188, 212, 0.8)', // Cor alterada para contraste
+                backgroundColor: 'rgba(0, 188, 212, 0.8)', 
                 borderColor: 'white',
                 borderWidth: 1
             }];
             graduacaoChartInstance.update();
-        }
 
-        /** Cria uma tabela simples para os Top Locais de Atuação. */
-        function updateTopLocais(efetivoPorLocal) {
-            const container = document.getElementById('tabela-top-locais');
-            const sortedLocais = Object.entries(efetivoPorLocal)
+            // C. Gráfico de Top Locais (NOVO)
+            const sortedLocais = Object.entries(data.locais)
                 .sort(([, a], [, b]) => b - a)
-                .slice(0, 10); 
+                .slice(0, 10); // Limita aos 10 primeiros locais
+            
+            const locaisLabels = sortedLocais.map(([local,]) => local);
+            const locaisData = sortedLocais.map(([, total]) => total);
 
-            if (sortedLocais.length === 0) {
-                container.innerHTML = '<p style="text-align: center; margin-top: 50px;">Nenhum local de atuação encontrado para o efetivo ativo.</p>';
-                return;
-            }
-
-            let html = `
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 70%;">Local de Atuação</th>
-                            <th style="width: 30%; text-align: right;">Total de PMs</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            sortedLocais.forEach(([local, total]) => {
-                html += `
-                    <tr>
-                        <td>${local}</td>
-                        <td style="text-align: right; font-weight: bold;">${total}</td>
-                    </tr>
-                `;
-            });
-
-            html += `
-                    </tbody>
-                </table>
-            `;
-            container.innerHTML = html;
+            topLocaisChartInstance.data.labels = locaisLabels;
+            topLocaisChartInstance.data.datasets = [{
+                label: 'PMs Presentes',
+                data: locaisData,
+                backgroundColor: 'rgba(255, 160, 0, 0.8)', // Cor de destaque (Laranja/Warning)
+                borderColor: 'white',
+                borderWidth: 1
+            }];
+            topLocaisChartInstance.update();
         }
 
         /** Cria a tabela detalhada do efetivo. */
@@ -609,7 +621,7 @@
             `;
 
             dadosEfetivo.forEach(item => {
-                const statusColor = item.Status_Efetivo === 'PRESENTE' ? 'var(--success)' : 'var(--danger)';
+                const statusColor = item.Status_Efetivo === 'PRESENTE' ? 'var(--success)' : (item.Status_Efetivo === 'DE FÉRIAS' || item.Status_Efetivo === 'AFASTADO' ? 'var(--warning)' : 'var(--danger)');
                 
                 html += '<tr>';
                 colunas.forEach(col => {
@@ -646,33 +658,41 @@
                 currentFilters.unidade = this.value;
                 updateDashboard(currentFilters);
             });
-
-            /* O Listener de Data foi removido */
         }
 
 
         // --- DADOS DE AMOSTRA PARA TESTE RÁPIDO (Refletindo o novo schema) ---
         function loadSampleData() {
             const sampleData = [
-                { Unidade: 'Batalhão Leste', Graduacao: 'MAJOR', Nome_Guerra: 'BRAVO', Identidade: '12345', Local_Atuacao: 'Comando', Status_Efetivo: 'PRESENTE', VTRs_Servico: 5 },
-                { Unidade: 'Batalhão Leste', Graduacao: 'CAPITÃO', Nome_Guerra: 'ALFA', Identidade: '54321', Local_Atuacao: 'P-3', Status_Efetivo: 'PRESENTE', VTRs_Servico: 5 },
-                { Unidade: 'Batalhão Leste', Graduacao: 'TENENTE', Nome_Guerra: 'CHARLIE', Identidade: '98765', Local_Atuacao: 'Supervisão', Status_Efetivo: 'AFASTADO', VTRs_Servico: 5 },
-                { Unidade: 'Batalhão Leste', Graduacao: 'SOLDADO', Nome_Guerra: 'PM001', Identidade: '56789', Local_Atuacao: 'RPA Setorial', Status_Efetivo: 'PRESENTE', VTRs_Servico: 5 },
-                { Unidade: '4ª CICOM', Graduacao: 'CAPITÃO', Nome_Guerra: 'DELTA', Identidade: '44444', Local_Atuacao: 'Comando', Status_Efetivo: 'PRESENTE', VTRs_Servico: 2 },
-                { Unidade: '4ª CICOM', Graduacao: 'SOLDADO', Nome_Guerra: 'PM002', Identidade: '45678', Local_Atuacao: 'Setor Urbano', Status_Efetivo: 'PRESENTE', VTRs_Servico: 2 },
-                { Unidade: '9ª CICOM', Graduacao: 'SARGENTO', Nome_Guerra: 'ECHO', Identidade: '99999', Local_Atuacao: 'Setor 1', Status_Efetivo: 'PRESENTE', VTRs_Servico: 3 },
-                { Unidade: '11ª CICOM', Graduacao: 'SOLDADO', Nome_Guerra: 'FOXTROT', Identidade: '11111', Local_Atuacao: 'Setor 2', Status_Efetivo: 'DE FÉRIAS', VTRs_Servico: 4 },
-                { Unidade: '30ª CICOM', Graduacao: 'MAJOR', Nome_Guerra: 'KILO', Identidade: '30303', Local_Atuacao: 'Comando', Status_Efetivo: 'PRESENTE', VTRs_Servico: 3 },
-                { Unidade: '30ª CICOM', Graduacao: 'SOLDADO', Nome_Guerra: 'LIMA', Identidade: '30304', Local_Atuacao: 'RPA', Status_Efetivo: 'FALTA', VTRs_Servico: 3 },
+                { Unidade: 'Batalhão Leste', Graduacao: 'MAJOR', Nome_de_Guerra: 'BRAVO', Identidade: '12345', Local_de_Atuacao: 'Comando', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 5 },
+                { Unidade: 'Batalhão Leste', Graduacao: 'CAPITÃO', Nome_de_Guerra: 'ALFA', Identidade: '54321', Local_de_Atuacao: 'P-3', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 5 },
+                { Unidade: 'Batalhão Leste', Graduacao: 'TENENTE', Nome_de_Guerra: 'CHARLIE', Identidade: '98765', Local_de_Atuacao: 'Supervisão', Status_do_Efetivo: 'AFASTADO', VTRs_em_Serviço_(Total_da_Unidade): 5 },
+                { Unidade: 'Batalhão Leste', Graduacao: 'SOLDADO', Nome_de_Guerra: 'PM001', Identidade: '56789', Local_de_Atuacao: 'RPA Setorial', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 5 },
+                { Unidade: '4ª CICOM', Graduacao: 'CAPITÃO', Nome_de_Guerra: 'DELTA', Identidade: '44444', Local_de_Atuacao: 'Comando', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 2 },
+                { Unidade: '4ª CICOM', Graduacao: 'SOLDADO', Nome_de_Guerra: 'PM002', Identidade: '45678', Local_de_Atuacao: 'Setor Urbano', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 2 },
+                { Unidade: '4ª CICOM', Graduacao: 'SOLDADO', Nome_de_Guerra: 'PM003', Identidade: '45679', Local_de_Atuacao: 'Setor Urbano', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 2 },
+                { Unidade: '9ª CICOM', Graduacao: 'SARGENTO', Nome_de_Guerra: 'ECHO', Identidade: '99999', Local_de_Atuacao: 'Setor 1', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 3 },
+                { Unidade: '9ª CICOM', Graduacao: 'SOLDADO', Nome_de_Guerra: 'PM901', Identidade: '99901', Local_de_Atuacao: 'Setor 1', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 3 },
+                { Unidade: '11ª CICOM', Graduacao: 'SOLDADO', Nome_de_Guerra: 'FOXTROT', Identidade: '11111', Local_de_Atuacao: 'Reforço Central', Status_do_Efetivo: 'DE FÉRIAS', VTRs_em_Serviço_(Total_da_Unidade): 4 },
+                { Unidade: '11ª CICOM', Graduacao: 'CABO', Nome_de_Guerra: 'GOLF', Identidade: '11112', Local_de_Atuacao: 'Reforço Central', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 4 },
+                { Unidade: '30ª CICOM', Graduacao: 'MAJOR', Nome_de_Guerra: 'KILO', Identidade: '30303', Local_de_Atuacao: 'Comando', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 3 },
+                { Unidade: '30ª CICOM', Graduacao: 'SOLDADO', Nome_de_Guerra: 'LIMA', Identidade: '30304', Local_de_Atuacao: 'RPA', Status_do_Efetivo: 'FALTA', VTRs_em_Serviço_(Total_da_Unidade): 3 },
             ];
 
-            // Aplica a normalização de status (simulação do que a função readExcelFile faz)
+            // Simula a normalização de nomes de colunas e dados
             const normalizedData = sampleData.map(item => {
-                 item.Status_Efetivo = item.Status_Efetivo ? String(item.Status_Efetivo).toUpperCase().trim() : 'NAO INFORMADO';
-                 item.Efetivo_Presente = item.Status_Efetivo === 'PRESENTE' ? 1 : 0;
-                 item.Efetivo_Ausente = item.Status_Efetivo !== 'PRESENTE' ? 1 : 0;
+                 item.Status_do_Efetivo = item.Status_do_Efetivo ? String(item.Status_do_Efetivo).toUpperCase().trim() : 'NAO INFORMADO';
+                 item.Efetivo_Presente = item.Status_do_Efetivo === 'PRESENTE' ? 1 : 0;
+                 item.Efetivo_Ausente = item.Status_do_Efetivo !== 'PRESENTE' ? 1 : 0;
                  item.Efetivo_Previsto = 1; 
-                 item.VTRs_Servico = parseInt(item.VTRs_Servico) || 0;
+                 item.VTRs_Servico = parseInt(item['VTRs_em_Serviço_(Total_da_Unidade)']) || 0;
+
+                 // Renomeia chaves para o padrão do dashboard
+                 item.Nome_Guerra = item.Nome_de_Guerra || '--';
+                 item.Local_Atuacao = item.Local_de_Atuacao || '--';
+                 item.Graduacao = item.Graduacao || '--';
+                 item.Identidade = item.Identidade || '--';
+                 
                  return item;
             });
             
