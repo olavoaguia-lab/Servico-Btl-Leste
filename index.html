@@ -8,140 +8,283 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        /* Estilos CSS do Dashboard (Mantidos e Ajustados) */
+        /* --- Variáveis de Cor Otimizadas para a Identidade Visual do Batalhão --- */
         :root {
-            --primary-dark: #1f3d7a; 
-            --primary-light: #2c509b; 
-            --accent-color: #00bcd4; 
-            --danger: #d32f2f; 
-            --success: #388e3c; 
-            --warning: #ffa000; 
-            --bg-gradient: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-light) 100%);
-            --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.1);
+            --batalhao-azul-escuro: #1A4384; /* Borda do logo / textos importantes */
+            --batalhao-azul-claro: #2C509B; /* Céu do logo / fundo de cards e gráficos */
+            --batalhao-verde: #4C7C4C;    /* Paisagem do logo / elementos de sucesso */
+            --batalhao-amarelo: #FFD700;  /* Sol do logo / elementos de destaque */
+            --batalhao-laranja: #FFA000;  /* Alternativa para destaque/aviso */
+            --batalhao-vermelho: #D32F2F; /* Para alertas de perigo/faltas */
+            --batalhao-branco: #F5F5F5;   /* Textos e detalhes claros */
+            --batalhao-preto-transparente: rgba(0, 0, 0, 0.4); /* Fundo de controles/sombras */
+
+            --shadow-powerbi: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra mais pronunciada */
+            --border-radius-lg: 12px;
+            --border-radius-md: 8px;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        /* --- Estilos Globais e Reset --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
         body {
-            background: var(--bg-gradient);
-            color: #f0f0f0;
+            background-color: var(--batalhao-azul-escuro); /* Fundo sólido ou gradiente sutil */
+            color: var(--batalhao-branco);
             min-height: 100vh;
             padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Alinha o conteúdo ao topo */
         }
 
         .dashboard-container {
             max-width: 1400px;
+            width: 100%;
             margin: 0 auto;
             display: grid;
             gap: 20px;
             grid-template-columns: 1fr;
         }
 
-        .header, .controls {
+        /* --- Header (Título e Logo) --- */
+        .header {
             grid-column: 1 / -1;
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 15px 20px;
-            border-radius: 10px;
-            box-shadow: var(--shadow-md);
+            background-color: var(--batalhao-azul-claro);
+            padding: 15px 25px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-powerbi);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 15px; /* Espaço entre elementos do header */
+        }
+        .header h2 {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: var(--batalhao-branco);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header .logo-container {
+            height: 60px; /* Tamanho do logo */
+            width: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .header .logo-container img {
+            max-height: 100%;
+            max-width: 100%;
+            border-radius: 50%; /* Se o logo for circular, ajuda a garantir o formato */
+            box-shadow: 0 0 8px rgba(0,0,0,0.3);
+        }
+        .header .date-time {
+            text-align: right;
+            font-size: 0.9em;
+            opacity: 0.8;
         }
 
+        /* --- Controles (Upload e Filtros) --- */
         .controls {
-            background-color: rgba(0, 0, 0, 0.2);
+            grid-column: 1 / -1;
+            background-color: var(--batalhao-preto-transparente); /* Fundo escuro transparente */
+            padding: 15px 25px;
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-powerbi);
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
-            justify-content: flex-start; /* Alinhamento à esquerda */
+            justify-content: flex-start;
+            align-items: center;
         }
-        .control-group label { margin-right: 10px; font-weight: 300; }
+        .control-group label { margin-right: 10px; font-weight: 400; color: var(--batalhao-branco); }
         .control-group select, .control-group input[type="file"], .upload-btn {
-            padding: 8px 12px;
-            border-radius: 5px;
-            border: none;
-            background-color: rgba(255, 255, 255, 0.2);
-            color: white;
+            padding: 10px 15px;
+            border-radius: var(--border-radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--batalhao-branco);
             cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.2s ease-in-out;
         }
-        .upload-btn { background-color: var(--accent-color); }
+        .control-group select:focus, .control-group input[type="file"]:focus, .upload-btn:focus {
+            outline: none;
+            border-color: var(--batalhao-amarelo);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+        }
+        .upload-btn { 
+            background-color: var(--batalhao-amarelo); 
+            color: var(--batalhao-azul-escuro); 
+            font-weight: 600;
+            border-color: var(--batalhao-amarelo);
+        }
+        .upload-btn:hover {
+            background-color: #e6c200; /* Um pouco mais escuro */
+            box-shadow: var(--shadow-powerbi);
+        }
         #csv-file-input { display: none; }
 
-        /* Grid de Cards */
+        /* --- Grid de Cards de Estatísticas --- */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Cards um pouco maiores */
             gap: 20px;
         }
 
         .card {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: var(--shadow-md);
+            background-color: var(--batalhao-azul-claro); /* Fundo dos cards */
+            padding: 25px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-powerbi);
             backdrop-filter: blur(5px);
-            transition: transform 0.3s;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            border-left: 5px solid; /* Borda colorida para identificação */
         }
-        .card h3 { font-size: 1.1em; margin-bottom: 10px; color: var(--accent-color); }
-        .card .value { font-size: 2.5em; font-weight: 700; }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        .card h3 { 
+            font-size: 1.15em; 
+            margin-bottom: 15px; 
+            color: var(--batalhao-branco); /* Títulos brancos */
+            opacity: 0.9;
+        }
+        .card .value { 
+            font-size: 2.8em; /* Valor maior */
+            font-weight: 700; 
+            color: var(--batalhao-amarelo); /* Destaque em amarelo */
+            line-height: 1;
+        }
 
-        #efetivo-total-previsto { background-color: rgba(44, 80, 155, 0.4); }
-        #efetivo-presente-dia { background-color: rgba(56, 142, 60, 0.4); }
-        #efetivo-ausente-dia { background-color: rgba(211, 47, 47, 0.4); }
-        #total-viaturas-servico { background-color: rgba(0, 188, 212, 0.4); }
+        /* Cores das bordas dos Cards */
+        #efetivo-total-previsto { border-left-color: var(--batalhao-azul-escuro); }
+        #efetivo-total-previsto .value { color: var(--batalhao-branco); } /* Previsto fica branco */
+        #efetivo-presente-dia { border-left-color: var(--batalhao-verde); }
+        #efetivo-presente-dia .value { color: var(--batalhao-verde); } /* Presente verde */
+        #efetivo-ausente-dia { border-left-color: var(--batalhao-vermelho); }
+        #efetivo-ausente-dia .value { color: var(--batalhao-vermelho); } /* Ausente vermelho */
+        #total-viaturas-servico { border-left-color: var(--batalhao-amarelo); }
+        #total-viaturas-servico .value { color: var(--batalhao-amarelo); } /* VTRs amarelo */
 
-
-        /* Seção de Gráficos e Tabelas */
+        /* --- Seção de Gráficos e Tabelas --- */
         .chart-section {
             grid-column: 1 / -1;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); /* Gráficos um pouco maiores */
             gap: 20px;
         }
 
         .chart-container {
-            min-height: 350px;
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: var(--shadow-md);
+            min-height: 380px; /* Altura um pouco maior para gráficos */
+            background-color: var(--batalhao-azul-claro); /* Fundo dos gráficos */
+            padding: 25px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-powerbi);
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-container h3 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: var(--batalhao-branco);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.9;
+        }
+        .chart-container > div {
+            flex-grow: 1; /* Faz o canvas preencher o espaço restante */
+            min-height: 0; /* Permite que o flex-grow funcione corretamente */
+        }
+        canvas {
+            max-height: 100%; /* Garante que o canvas não estoure */
+            width: 100%;
         }
 
-        /* Estilos de Tabela */
+        /* --- Estilos de Tabela --- */
         .data-table {
             width: 100%;
-            border-collapse: collapse;
-            color: white;
+            border-collapse: separate; /* Para bordas arredondadas */
+            border-spacing: 0;
+            color: var(--batalhao-branco);
             font-size: 0.9em;
+            border-radius: var(--border-radius-md);
+            overflow: hidden; /* Garante que as bordas arredondadas sejam aplicadas */
         }
-        .data-table thead tr { background-color: rgba(0, 188, 212, 0.2); }
+        .data-table thead tr { 
+            background-color: rgba(255, 255, 255, 0.15); /* Cabeçalho mais claro */
+            font-weight: 600;
+        }
         .data-table th, .data-table td {
-            padding: 10px;
+            padding: 12px 15px;
             text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08); /* Linhas mais sutis */
         }
-        .data-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); }
+        .data-table tbody tr:hover { 
+            background-color: rgba(255, 255, 255, 0.08); 
+        }
+        .data-table tbody tr:last-child td {
+            border-bottom: none; /* Remove a borda da última linha */
+        }
+        .data-table .status-presente { color: var(--batalhao-verde); font-weight: bold; }
+        .data-table .status-afastado, .data-table .status-ferias { color: var(--batalhao-laranja); font-weight: bold; }
+        .data-table .status-falta, .data-table .status-nao-informado { color: var(--batalhao-vermelho); font-weight: bold; }
 
-        /* Responsividade para o Grid de Gráficos (3 colunas em telas grandes) */
+
+        /* --- Responsividade --- */
         @media (min-width: 768px) {
             .chart-section { 
                 grid-template-columns: repeat(3, 1fr); 
             }
-            /* Tabela detalhada ocupando duas colunas na segunda linha */
             #tabela-detalhada-efetivo-container {
                 grid-column: span 2;
             }
-            /* Gráfico Top Locais ocupando uma coluna na segunda linha */
             #top-locais-chart-container {
                 grid-column: span 1;
             }
+        }
+        @media (max-width: 767px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .header .date-time {
+                text-align: center;
+                margin-top: 10px;
+            }
+            .header h2 {
+                flex-direction: column;
+                text-align: center;
+                font-size: 1.5em;
+            }
+            .controls {
+                justify-content: center;
+            }
+        }
+
+        /* --- Overlay de Carregamento e Alertas --- */
+        #loading-overlay {
+            background: rgba(0,0,0,0.8);
+        }
+        .spinner {
+            border-top: 6px solid var(--batalhao-amarelo);
+        }
+        #alert-message {
+            background-color: var(--batalhao-verde); /* Cor padrão de sucesso */
+            box-shadow: var(--shadow-powerbi);
+        }
+        #alert-message.error {
+            background-color: var(--batalhao-vermelho);
         }
     </style>
 </head>
 <body>
 
     <div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000;">
-        <div class="spinner" style="border: 6px solid rgba(255, 255, 255, 0.3); border-top: 6px solid var(--accent-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+        <div class="spinner" style="border: 6px solid rgba(255, 255, 255, 0.3); border-top: 6px solid var(--batalhao-amarelo); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
     </div>
     <div id="alert-message" style="display: none; position: fixed; top: 10px; right: 10px; padding: 10px 20px; border-radius: 5px; color: white; z-index: 1001; transition: opacity 0.3s;"></div>
     <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
@@ -149,7 +292,9 @@
     <div class="dashboard-container">
 
         <header class="header">
-            <h2>Serviço Ordinário - Batalhão Leste <i class="fas fa-calendar-day"></i></h2>
+            <div class="logo-container">
+                </div>
+            <h2>Serviço Ordinário - Batalhão Leste <i class="fas fa-chart-line"></i></h2>
             <div class="date-time">
                 <span id="current-date"></span><br>
                 <span id="current-time" style="font-size: 0.9em;"></span>
@@ -169,12 +314,12 @@
                 </select>
             </div>
             
-            <span style="font-weight: 500; align-self: center;">Dados Referentes ao Arquivo Carregado.</span>
+            <span style="font-weight: 500; opacity: 0.8; align-self: center;">Dados Referentes ao Arquivo Carregado.</span>
         </div>
         
         <div class="stats-grid">
             <div class="card" id="efetivo-total-previsto">
-                <h3>Efetivo Total Previsto</h3>
+                <h3>Efetivo Total (Previsto)</h3>
                 <p class="value" id="total-previsto">0</p>
             </div>
             <div class="card" id="efetivo-presente-dia">
@@ -194,30 +339,30 @@
         <div class="chart-section">
             
             <div class="chart-container" id="efetivo-chart-container">
-                <h3>Distribuição Efetivo (Presente vs. Ausente) <i class="fas fa-chart-pie"></i></h3>
-                <div style="height: 300px; margin-top: 10px;">
+                <h3>Distribuição Efetivo (Ativo vs. Ausente) <i class="fas fa-chart-pie"></i></h3>
+                <div style="height: 100%; width: 100%;">
                     <canvas id="efetivoChart"></canvas>
                 </div>
             </div>
 
             <div class="chart-container" id="graduacao-chart-container">
                 <h3>Efetivo Ativo por Graduação <i class="fas fa-medal"></i></h3>
-                <div style="height: 300px;">
+                <div style="height: 100%; width: 100%;">
                     <canvas id="graduacaoChart"></canvas>
                 </div>
             </div>
 
             <div class="chart-container" id="top-locais-chart-container">
                 <h3>Top Locais/Setores de Atuação <i class="fas fa-map-marker-alt"></i></h3>
-                <div style="height: 300px;">
+                <div style="height: 100%; width: 100%;">
                     <canvas id="topLocaisChart"></canvas>
                 </div>
             </div>
             
              <div class="chart-container" id="tabela-detalhada-efetivo-container">
-                <h3>Detalhamento do Efetivo Ativo (Por Policial) <i class="fas fa-clipboard-list"></i></h3>
-                <div id="tabela-detalhada-efetivo" style="max-height: 300px; overflow-y: auto;">
-                    <p style="text-align: center; margin-top: 50px;">Carregue os dados para visualizar.</p>
+                <h3>Detalhamento do Efetivo (Por Militar) <i class="fas fa-clipboard-list"></i></h3>
+                <div id="tabela-detalhada-efetivo" style="flex-grow: 1; overflow-y: auto; ">
+                    <p style="text-align: center; margin-top: 50px; opacity: 0.7;">Carregue os dados para visualizar.</p>
                 </div>
             </div>
 
@@ -232,484 +377,7 @@
             unidade: 'todas'
         };
         
-        // --- FUNÇÕES DE UTILIADE GERAIS ---
-        function showLoading(show) {
-            document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
-        }
-        function showAlert(message, type = 'success') {
-            const alertElement = document.getElementById('alert-message');
-            alertElement.textContent = message;
-            alertElement.style.cssText = `display: block; background-color: ${type === 'success' ? 'var(--success)' : 'var(--danger)'}; opacity: 1;`;
-            clearTimeout(alertElement.timer);
-            alertElement.timer = setTimeout(() => {
-                alertElement.style.cssText = `display: none; opacity: 0;`;
-            }, 3000);
-        }
-        function updateCurrentDate() {
-             document.getElementById('current-date').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        }
-        function updateDateTime() {
-             document.getElementById('current-time').textContent = new Date().toLocaleTimeString('pt-BR');
-        }
-
-        // --- FUNÇÕES DE PROCESSAMENTO DE DADOS ---
-        function processExcelData(data) {
-            if (data.length === 0) {
-                showAlert('A planilha está vazia ou não contém dados válidos.', 'error');
-                showLoading(false);
-                return;
-            }
-
-            rawData = data; 
-            
-            // 1. Identifica Unidades únicas
-            const unidades = new Set();
-            data.forEach(item => {
-                if (item.Unidade) unidades.add(item.Unidade);
-            });
-
-            // 2. Preenche o filtro Select
-            populateSelect('unidade-select', Array.from(unidades), 'todas', 'Todas as Unidades');
-            currentFilters.unidade = 'todas'; // Reseta o filtro de unidade
-            
-            // 3. Atualiza o dashboard
-            updateDashboard(currentFilters);
-            showLoading(false);
-            showAlert('✅ Dados de efetivo carregados e dashboard atualizado!', 'success');
-        }
-
-        function populateSelect(elementId, items, defaultValue = null, defaultLabel = null) {
-            const selectElement = document.getElementById(elementId);
-            selectElement.innerHTML = ''; 
-
-            if (defaultLabel !== null) {
-                const defaultOption = document.createElement('option');
-                defaultOption.value = defaultValue;
-                defaultOption.textContent = defaultLabel;
-                selectElement.appendChild(defaultOption);
-            }
-
-            items.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item;
-                option.textContent = item;
-                selectElement.appendChild(option);
-            });
-        }
-
-
-        // --- FUNÇÕES DE LEITURA DE ARQUIVO ---
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                showLoading(true);
-                readExcelFile(file);
-            }
-        }
-
-        function readExcelFile(file) {
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    
-                    // Usa header: 1 para lidar com arquivos CSV/Excel com linhas em branco iniciais
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    if (jsonData.length < 2) {
-                        throw new Error('A planilha está vazia ou não contém cabeçalhos/dados');
-                    }
-                    
-                    // Encontra a linha de cabeçalho correta
-                    let headerRowIndex = -1;
-
-                    for (let i = 0; i < jsonData.length; i++) {
-                        // Verifica se 'Unidade' está presente no array de células
-                        if (Array.isArray(jsonData[i]) && jsonData[i].some(cell => String(cell).trim().toUpperCase() === 'UNIDADE')) {
-                            headerRowIndex = i;
-                            break;
-                        }
-                    }
-
-                    if (headerRowIndex === -1) {
-                         throw new Error('Não foi possível encontrar o cabeçalho "Unidade" na planilha. Verifique se os cabeçalhos estão na primeira linha preenchida.');
-                    }
-                    
-                    // Mapeia os dados usando o cabeçalho correto
-                    // Normaliza os nomes das colunas removendo acentos, espaços e substituindo 'VTRs em Serviço (Total da Unidade)' por 'VTRs_Servico'
-                    const headers = jsonData[headerRowIndex].map(h => {
-                        if (!h) return '';
-                        let normalized = h.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                        normalized = normalized.replace(/\s+/g, '_');
-                        normalized = normalized.replace('VTRs_em_Servico_(Total_da_Unidade)', 'VTRs_Servico');
-                        return normalized;
-                    });
-                    
-                    let dataToProcess = [];
-                    for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
-                        const row = jsonData[i];
-                        if (Array.isArray(row) && row.some(cell => cell && String(cell).trim() !== '')) { // Ignora linhas completamente vazias
-                            let item = {};
-                            headers.forEach((header, index) => {
-                                if (header) {
-                                    item[header] = row[index] !== undefined ? row[index] : '';
-                                }
-                            });
-                             // Apenas adiciona se tiver um valor para 'Unidade'
-                             if (item.Unidade && String(item.Unidade).trim() !== '') dataToProcess.push(item);
-                        }
-                    }
-
-                    // Normaliza os dados
-                    const normalizedData = dataToProcess.map(item => {
-                        // Normaliza status e calcula efetivo
-                        item.Status_Efetivo = item.Status_do_Efetivo ? String(item.Status_do_Efetivo).toUpperCase().trim() : 'NAO INFORMADO';
-                        item.Efetivo_Presente = item.Status_Efetivo === 'PRESENTE' ? 1 : 0;
-                        item.Efetivo_Ausente = item.Status_Efetivo !== 'PRESENTE' ? 1 : 0;
-                        item.Efetivo_Previsto = 1; 
-                        
-                        // Garante que Identidade e VTRs_Servico existam
-                        item.Identidade = item.Identidade ? String(item.Identidade) : '--';
-                        item.VTRs_Servico = parseInt(item.VTRs_Servico) || 0; 
-
-                        // Renomeia chaves de volta para o padrão esperado no dashboard (devido à normalização do cabeçalho)
-                        item.Nome_Guerra = item.Nome_de_Guerra || '--';
-                        item.Local_Atuacao = item.Local_de_Atuacao || '--';
-                        
-                        return item;
-                    });
-
-
-                    processExcelData(normalizedData);
-                    
-                } catch (error) {
-                    console.error('❌ Erro na leitura:', error);
-                    showAlert('❌ Erro ao ler arquivo: ' + error.message, 'error');
-                    showLoading(false);
-                }
-            };
-            
-            reader.onerror = function(error) {
-                console.error('❌ Erro no FileReader:', error);
-                showAlert('❌ Erro ao ler o arquivo selecionado', 'error');
-                showLoading(false);
-            };
-            
-            reader.readAsArrayBuffer(file);
-        }
-
-        // --- FUNÇÕES DE DASHBOARD (Focadas em Efetivo) ---
-
-        let efetivoChartInstance = null;
-        let graduacaoChartInstance = null;
-        let topLocaisChartInstance = null; // Nova instância para o Gráfico de Top Locais
-
-
-        /** Inicializa e configura as instâncias dos gráficos Chart.js. */
-        function setupCharts() {
-            const defaultOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { labels: { color: 'white' } }
-                },
-                scales: {
-                    x: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
-                    y: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' }, beginAtZero: true }
-                }
-            };
-
-            // 1. Efetivo (Presente vs. Ausente) - PIE Chart
-            const efetivoCtx = document.getElementById('efetivoChart').getContext('2d');
-            if (efetivoChartInstance) efetivoChartInstance.destroy();
-            efetivoChartInstance = new Chart(efetivoCtx, {
-                type: 'doughnut', 
-                data: {
-                    labels: ['Presente', 'Ausente/Faltas'],
-                    datasets: [{
-                        data: [0, 0], 
-                        backgroundColor: ['var(--success)', 'var(--danger)'],
-                        borderColor: 'rgba(255, 255, 255, 0.8)',
-                        borderWidth: 2
-                    }]
-                },
-                options: { 
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { position: 'bottom', labels: { color: 'white' } }
-                    }
-                }
-            });
-
-            // 2. Efetivo Ativo por Graduação - BAR Chart
-            const graduacaoCtx = document.getElementById('graduacaoChart').getContext('2d');
-            if (graduacaoChartInstance) graduacaoChartInstance.destroy();
-            graduacaoChartInstance = new Chart(graduacaoCtx, {
-                type: 'bar', 
-                data: { labels: [], datasets: [] },
-                options: { ...defaultOptions } 
-            });
-
-            // 3. Top Locais de Atuação - HORIZONTAL BAR Chart (NOVO)
-            const locaisCtx = document.getElementById('topLocaisChart').getContext('2d');
-            if (topLocaisChartInstance) topLocaisChartInstance.destroy();
-            topLocaisChartInstance = new Chart(locaisCtx, {
-                type: 'bar', 
-                data: { labels: [], datasets: [] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y', // Define o eixo como horizontal
-                    plugins: {
-                        legend: { display: false },
-                        title: { display: false }
-                    },
-                    scales: {
-                        x: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' }, beginAtZero: true },
-                        y: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
-                    }
-                }
-            });
-        }
-
-
-        /** Filtra os dados e recalcula as métricas para atualização do dashboard. */
-        function updateDashboard(filters) {
-            // 1. Filtra os dados brutos com base na Unidade (Snapshot Diário, sem filtro de Data)
-            let filteredData = rawData.filter(item => {
-                const matchesUnidade = filters.unidade === 'todas' || item.Unidade === filters.unidade;
-                return matchesUnidade;
-            });
-            
-            // 2. Cálculos das Métricas Chaves
-            
-            const totalPrevisto = filteredData.reduce((sum, item) => sum + (item.Efetivo_Previsto || 0), 0); 
-            const totalPresente = filteredData.reduce((sum, item) => sum + (item.Efetivo_Presente || 0), 0);
-            const totalAusente = totalPrevisto - totalPresente;
-            
-            // VTRs: Soma os valores máximos de VTRs_Servico por unidade
-            let totalVTRs = 0;
-            if (filters.unidade === 'todas') {
-                 const vtrsPorUnidade = filteredData.reduce((acc, item) => {
-                    const vtrValue = parseInt(item.VTRs_Servico) || 0;
-                    acc[item.Unidade] = Math.max(acc[item.Unidade] || 0, vtrValue);
-                    return acc;
-                }, {});
-                totalVTRs = Object.values(vtrsPorUnidade).reduce((sum, vtr) => sum + vtr, 0);
-            } else {
-                 totalVTRs = filteredData.reduce((max, item) => Math.max(max, parseInt(item.VTRs_Servico) || 0), 0);
-            }
-
-            // Cálculos para Gráficos e Tabelas
-            
-            // Efetivo por Graduação (APENAS PRESENTE)
-            const efetivoPorGraduacao = filteredData
-                .filter(item => item.Efetivo_Presente === 1)
-                .reduce((acc, item) => {
-                    const grad = item.Graduacao || 'Sem Graduação';
-                    acc[grad] = (acc[grad] || 0) + 1;
-                    return acc;
-                }, {});
-
-            // Efetivo por Local de Atuação (APENAS PRESENTE)
-            const efetivoPorLocal = filteredData
-                 .filter(item => item.Efetivo_Presente === 1)
-                .reduce((acc, item) => {
-                    const local = item.Local_Atuacao || 'Local Indefinido';
-                    acc[local] = (acc[local] || 0) + 1;
-                    return acc;
-                }, {});
-
-
-            // 3. Atualiza os Cards de Estatísticas
-            document.getElementById('total-previsto').textContent = totalPrevisto;
-            document.getElementById('efetivo-presente-dia-card').textContent = totalPresente;
-            document.getElementById('efetivo-ausente-dia-card').textContent = totalAusente >= 0 ? totalAusente : 0;
-            document.getElementById('vtr-servico').textContent = totalVTRs;
-
-
-            // 4. Atualiza os Gráficos
-            updateCharts({
-                presente: totalPresente,
-                ausente: totalAusente,
-                graduacao: efetivoPorGraduacao,
-                locais: efetivoPorLocal // Passa os dados de Locais
-            });
-
-            // 5. Atualiza Tabela Detalhada
-            updateTabelaDetalhada(filteredData);
-
-            // Reseta se não houver dados.
-            if (rawData.length === 0) {
-                 document.getElementById('total-previsto').textContent = 0;
-                 document.getElementById('efetivo-presente-dia-card').textContent = 0;
-                 document.getElementById('efetivo-ausente-dia-card').textContent = 0;
-                 document.getElementById('vtr-servico').textContent = 0;
-                 updateCharts({ presente: 0, ausente: 0, graduacao: {}, locais: {} });
-            }
-        }
-
-        /** Atualiza os gráficos do Chart.js. */
-        function updateCharts(data) {
-            // A. Gráfico de Efetivo (Presente vs. Ausente)
-            efetivoChartInstance.data.datasets[0].data = [data.presente, data.ausente >= 0 ? data.ausente : 0];
-            efetivoChartInstance.update();
-
-            // B. Efetivo Ativo por Graduação
-            const gradLables = Object.keys(data.graduacao).sort((a, b) => {
-                 // Ordem de precedência (ajustada para visualização militar)
-                 const order = ['CORONEL', 'MAJOR', 'CAPITÃO', 'TENENTE', 'SUBTENENTE', 'SARGENTO', 'CABO', 'SOLDADO', 'Sem Graduação'];
-                 return order.indexOf(a) - order.indexOf(b);
-            });
-            const gradData = gradLables.map(key => data.graduacao[key]);
-
-            graduacaoChartInstance.data.labels = gradLables;
-            graduacaoChartInstance.data.datasets = [{
-                label: 'Efetivo Ativo',
-                data: gradData,
-                backgroundColor: 'rgba(0, 188, 212, 0.8)', 
-                borderColor: 'white',
-                borderWidth: 1
-            }];
-            graduacaoChartInstance.update();
-
-            // C. Gráfico de Top Locais (NOVO)
-            const sortedLocais = Object.entries(data.locais)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 10); // Limita aos 10 primeiros locais
-            
-            const locaisLabels = sortedLocais.map(([local,]) => local);
-            const locaisData = sortedLocais.map(([, total]) => total);
-
-            topLocaisChartInstance.data.labels = locaisLabels;
-            topLocaisChartInstance.data.datasets = [{
-                label: 'PMs Presentes',
-                data: locaisData,
-                backgroundColor: 'rgba(255, 160, 0, 0.8)', // Cor de destaque (Laranja/Warning)
-                borderColor: 'white',
-                borderWidth: 1
-            }];
-            topLocaisChartInstance.update();
-        }
-
-        /** Cria a tabela detalhada do efetivo. */
-        function updateTabelaDetalhada(dadosEfetivo) {
-            const container = document.getElementById('tabela-detalhada-efetivo');
-
-            if (dadosEfetivo.length === 0) {
-                container.innerHTML = '<p style="text-align: center; margin-top: 50px;">Nenhum militar encontrado para os filtros selecionados.</p>';
-                return;
-            }
-
-            // Colunas ajustadas: Unidade, Graduacao, Nome_Guerra, Identidade, Local_Atuacao, Status_Efetivo
-            const colunas = ['Unidade', 'Graduacao', 'Nome_Guerra', 'Identidade', 'Local_Atuacao', 'Status_Efetivo']; 
-            
-            let html = `
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            ${colunas.map(col => `<th>${col.replace(/_/g, ' ')}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            dadosEfetivo.forEach(item => {
-                const statusColor = item.Status_Efetivo === 'PRESENTE' ? 'var(--success)' : (item.Status_Efetivo === 'DE FÉRIAS' || item.Status_Efetivo === 'AFASTADO' ? 'var(--warning)' : 'var(--danger)');
-                
-                html += '<tr>';
-                colunas.forEach(col => {
-                    let cellContent = item[col] || '--';
-                    if (col === 'Status_Efetivo') {
-                         cellContent = `<span style="font-weight: bold; color: ${statusColor};">${cellContent}</span>`;
-                    }
-                    html += `<td>${cellContent}</td>`;
-                });
-                html += '</tr>';
-            });
-
-            html += `
-                    </tbody>
-                </table>
-            `;
-            container.innerHTML = html;
-        }
-
-
-        // --- FUNÇÕES DE CONTROLE DE EVENTOS ---
-
-        function setupEventListeners() {
-            const fileInput = document.getElementById('csv-file-input');
-            const unidadeSelect = document.getElementById('unidade-select');
-
-            document.getElementById('upload-btn').addEventListener('click', () => {
-                fileInput.click();
-            });
-
-            fileInput.addEventListener('change', handleFileSelect);
-
-            unidadeSelect.addEventListener('change', function() {
-                currentFilters.unidade = this.value;
-                updateDashboard(currentFilters);
-            });
-        }
-
-
-        // --- DADOS DE AMOSTRA PARA TESTE RÁPIDO (Refletindo o novo schema) ---
-        function loadSampleData() {
-            const sampleData = [
-                { Unidade: 'Batalhão Leste', Graduacao: 'MAJOR', Nome_de_Guerra: 'BRAVO', Identidade: '12345', Local_de_Atuacao: 'Comando', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 5 },
-                { Unidade: 'Batalhão Leste', Graduacao: 'CAPITÃO', Nome_de_Guerra: 'ALFA', Identidade: '54321', Local_de_Atuacao: 'P-3', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 5 },
-                { Unidade: 'Batalhão Leste', Graduacao: 'TENENTE', Nome_de_Guerra: 'CHARLIE', Identidade: '98765', Local_de_Atuacao: 'Supervisão', Status_do_Efetivo: 'AFASTADO', VTRs_em_Serviço_(Total_da_Unidade): 5 },
-                { Unidade: 'Batalhão Leste', Graduacao: 'SOLDADO', Nome_de_Guerra: 'PM001', Identidade: '56789', Local_de_Atuacao: 'RPA Setorial', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 5 },
-                { Unidade: '4ª CICOM', Graduacao: 'CAPITÃO', Nome_de_Guerra: 'DELTA', Identidade: '44444', Local_de_Atuacao: 'Comando', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 2 },
-                { Unidade: '4ª CICOM', Graduacao: 'SOLDADO', Nome_de_Guerra: 'PM002', Identidade: '45678', Local_de_Atuacao: 'Setor Urbano', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 2 },
-                { Unidade: '4ª CICOM', Graduacao: 'SOLDADO', Nome_de_Guerra: 'PM003', Identidade: '45679', Local_de_Atuacao: 'Setor Urbano', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 2 },
-                { Unidade: '9ª CICOM', Graduacao: 'SARGENTO', Nome_de_Guerra: 'ECHO', Identidade: '99999', Local_de_Atuacao: 'Setor 1', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 3 },
-                { Unidade: '9ª CICOM', Graduacao: 'SOLDADO', Nome_de_Guerra: 'PM901', Identidade: '99901', Local_de_Atuacao: 'Setor 1', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 3 },
-                { Unidade: '11ª CICOM', Graduacao: 'SOLDADO', Nome_de_Guerra: 'FOXTROT', Identidade: '11111', Local_de_Atuacao: 'Reforço Central', Status_do_Efetivo: 'DE FÉRIAS', VTRs_em_Serviço_(Total_da_Unidade): 4 },
-                { Unidade: '11ª CICOM', Graduacao: 'CABO', Nome_de_Guerra: 'GOLF', Identidade: '11112', Local_de_Atuacao: 'Reforço Central', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 4 },
-                { Unidade: '30ª CICOM', Graduacao: 'MAJOR', Nome_de_Guerra: 'KILO', Identidade: '30303', Local_de_Atuacao: 'Comando', Status_do_Efetivo: 'PRESENTE', VTRs_em_Serviço_(Total_da_Unidade): 3 },
-                { Unidade: '30ª CICOM', Graduacao: 'SOLDADO', Nome_de_Guerra: 'LIMA', Identidade: '30304', Local_de_Atuacao: 'RPA', Status_do_Efetivo: 'FALTA', VTRs_em_Serviço_(Total_da_Unidade): 3 },
-            ];
-
-            // Simula a normalização de nomes de colunas e dados
-            const normalizedData = sampleData.map(item => {
-                 item.Status_do_Efetivo = item.Status_do_Efetivo ? String(item.Status_do_Efetivo).toUpperCase().trim() : 'NAO INFORMADO';
-                 item.Efetivo_Presente = item.Status_do_Efetivo === 'PRESENTE' ? 1 : 0;
-                 item.Efetivo_Ausente = item.Status_do_Efetivo !== 'PRESENTE' ? 1 : 0;
-                 item.Efetivo_Previsto = 1; 
-                 item.VTRs_Servico = parseInt(item['VTRs_em_Serviço_(Total_da_Unidade)']) || 0;
-
-                 // Renomeia chaves para o padrão do dashboard
-                 item.Nome_Guerra = item.Nome_de_Guerra || '--';
-                 item.Local_Atuacao = item.Local_de_Atuacao || '--';
-                 item.Graduacao = item.Graduacao || '--';
-                 item.Identidade = item.Identidade || '--';
-                 
-                 return item;
-            });
-            
-            processExcelData(normalizedData);
-            showAlert('Dados de amostra carregados com sucesso!', 'success');
-        }
-
-
-        // --- INICIALIZAÇÃO GERAL ---
-        document.addEventListener('DOMContentLoaded', function() {
-            updateCurrentDate();
-            updateDateTime();
-            setInterval(updateDateTime, 60000); 
-            setupCharts(); 
-            setupEventListeners(); 
-            loadSampleData(); // CARREGA OS DADOS DE TESTE AUTOMATICAMENTE
-        });
-    </script>
-</body>
-</html>
+        // --- Funções de Injeção de Imagens e SVGs (Para Logos) ---
+        // Funções para injetar o logo como SVG ou Base64 (melhor para cores e qualidade)
+        function injectLogo(selector) {
+            const logoBase64 = "data:image/png;base64,iVBORORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJ/FOxAAAAkFBMVEUAAAD/AAD/Dg7/ExP/DQ3/CAj/Bgf/AQH/FBX/Cwv/AgL/EBD/HR3/Fxf/GRn/GxtmZmZCQkKioqKgoKDj4+Pm5ubk5OTd3d3a2tre3t7Z2dna2tre3t7c3NzR0dHV1dXGxsbBwcHk5OTZ2dnj4+Pq6urp6enl5eXr6+vw8PDx8fHy8vL09PT19fX4+Pj8/Pz9/f3+//+2/c2UAAAAPnRSTlMAYF9hcnNzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3NzdjJ12AAAAAWJLR0QAiAUdSAAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SUhBTQoAAADsFAFAAACUSUlEQVR42u3dC1+cPBfG8WsQQyZJJ5G0UUpZ2i67y0072+30/f+/cW2LzQhXkYtL5Pgeiufp4JzD8Z73/PPei3JcCAAAgC2Q/f14fXz8t/P77P789u72w/H+mI9j/c7z9+/z8/v0eHw+Pj9/n5+/z4/z4+3z+fz8/f17fv0+3w9fX1/+e31+/n7Pz8/P/z9//j8/L35fX38Pj9/X17fX+7t8fF6fP1+f319fX+7v97fD6/39/fX9ff39e/39+/P79/Xh+/L1+Xy/X19eX+/X7+X3+3z8Pr2/3t+3Xz+/v7++v9/f1+/v39f37+Pv38/f37+/f1+3z8/v19/L5fXz8/v18f1+/v7++f//+/v38/f37+/v7++fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+
