@@ -3,25 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Efetivo PM - Visual Corporativo</title>
-    
+    <title>Serviço Ordinário - Batalhão Leste</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
     <style>
-        /* --- ESTILOS DE IDENTIDADE VISUAL --- */
+        /* --- ESTILOS VISUAIS: Inspirado na Segunda Imagem (Claro e Limpo) --- */
         :root {
-            --primary-dark: #1A237E; 
-            --primary-light: #2C387E; 
-            --accent-color: #00BCD4; 
-            --danger: #E53935; 
-            --success: #43A047; 
-            --warning: #FFA000; 
-            --bg-color: #F4F6F9; 
-            --card-bg: #FFFFFF; 
-            --shadow-powerbi: 0 0 10px rgba(0, 0, 0, 0.08);
-            --header-bg: linear-gradient(90deg, var(--primary-dark) 0%, #303F9F 100%);
+            --primary-dark: #1f3d7a; /* Azul Marinho (Cabeçalho/Textos) */
+            --primary-light: #2c509b; /* Azul Royal */
+            --accent-color: #00BCD4; /* Ciano/Turquesa (Destaque) */
+            --danger: #D32F2F; /* Vermelho (Ausente) */
+            --success: #388E3C; /* Verde (Presente) */
+            --warning: #FFA000; /* Amarelo/Laranja (Recursos) */
+            --bg-color: #F8F9FA; /* Fundo Muito Claro */
+            --card-bg: #FFFFFF; /* Fundo do Card */
+            --shadow-powerbi: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra mais suave */
+            --header-bg: var(--primary-dark);
         }
 
         * {
@@ -43,44 +42,230 @@
             padding: 20px;
         }
 
-        /* [RESTANTE DO CSS OMITIDO POR SER O MESMO] */
-        .header { background: var(--header-bg); color: white; padding: 20px 40px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .header h1 { font-size: 1.8rem; font-weight: 500; }
-        .logo-container { height: 50px; display: flex; align-items: center; gap: 15px; }
-        .logo-batalhao { height: 100%; width: auto; border-radius: 50%; border: 2px solid white; }
-        .controls { display: flex; gap: 15px; }
-        .btn-upload { background-color: var(--accent-color); color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; transition: background-color 0.3s; border: none; display: flex; align-items: center; gap: 8px; }
-        .btn-upload:hover { background-color: #00A3B5; }
-        .file-input { display: none; }
-        .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        .top-area { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
-        .sidebar { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: var(--shadow-powerbi); height: fit-content; }
-        .sidebar h3 { color: var(--primary-dark); margin-bottom: 15px; font-size: 1.2rem; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .filter-group { margin-bottom: 20px; }
-        .filter-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; }
-        .filter-group select { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ddd; background-color: #fcfcfc; appearance: none; }
-        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        .metric-card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: var(--shadow-powerbi); border-left: 5px solid; transition: transform 0.3s ease; }
-        .metric-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15); }
-        .metric-label { font-size: 0.9rem; color: #777; text-transform: uppercase; font-weight: 500; }
-        .metric-value { font-size: 2.5rem; font-weight: 700; color: var(--primary-dark); margin-top: 5px; }
-        .metric-subtitle { font-size: 0.8rem; color: #AAA; margin-top: 5px; }
-        #totalEfetivoCard { border-color: var(--success); }
+        /* --- Cabeçalho e Controles --- */
+        .header {
+            background: var(--header-bg);
+            color: white;
+            padding: 20px 40px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 500;
+        }
+        
+        .logo-container {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-batalhao {
+            height: 100%;
+            width: auto;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-upload {
+            background-color: var(--accent-color);
+            color: var(--primary-dark);
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            border: 2px solid var(--accent-color);
+            background-color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-upload:hover {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .file-input {
+            display: none;
+        }
+        
+        /* --- Layout Principal --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        /* --- Área de Filtros e Métricas --- */
+        .top-area {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-powerbi);
+            height: fit-content;
+        }
+
+        .sidebar h3 {
+            color: var(--primary-dark);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .filter-group {
+            margin-bottom: 20px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .filter-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background-color: #fcfcfc;
+            appearance: none; 
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        /* --- Cards de Métricas (KPIs) --- */
+        .metric-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-powerbi);
+            border-left: 5px solid;
+            transition: transform 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: #777;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-top: 5px;
+        }
+
+        .metric-subtitle {
+            font-size: 0.8rem;
+            color: #AAA;
+            margin-top: 5px;
+        }
+        
+        /* Cores dos Destaques das Métricas */
+        #totalEfetivoCard { border-color: var(--primary-dark); }
+        #efetivoPresenteCard { border-color: var(--success); }
         #efetivoAusenteCard { border-color: var(--danger); }
         #totalVTRCard { border-color: var(--accent-color); }
         #totalPOGCard { border-color: var(--warning); }
+        
         #efetivoAusenteValue { color: var(--danger); }
+        #efetivoPresenteValue { color: var(--success); }
         #totalVTRValue { color: var(--accent-color); }
         #totalPOGValue { color: var(--warning); }
-        .charts-and-table { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-        .chart-container, .table-container { background: var(--card-bg); padding: 25px; border-radius: 8px; box-shadow: var(--shadow-powerbi); }
-        .chart-title { font-size: 1.3rem; font-weight: 600; color: var(--primary-dark); margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .chart-wrapper { position: relative; height: 300px; }
-        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .data-table th, .data-table td { padding: 10px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-        .data-table th { background-color: #f7f7f7; color: var(--primary-dark); font-weight: 600; text-transform: uppercase; }
-        .data-table tbody tr:hover { background-color: #eef1f5; }
-        @media (max-width: 1200px) { .top-area { grid-template-columns: 1fr; } .charts-and-table { grid-template-columns: 1fr; } }
+
+        /* --- Área de Gráficos e Tabela --- */
+        .charts-and-table {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .chart-container, .table-container {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-powerbi);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 300px; 
+        }
+        
+        /* --- Tabela de Detalhes --- */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .data-table th, .data-table td {
+            padding: 10px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .data-table th {
+            background-color: #f7f7f7;
+            color: var(--primary-dark);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .data-table tbody tr:hover {
+            background-color: #eef1f5;
+        }
+        
+        /* --- Responsividade --- */
+        @media (max-width: 1200px) {
+            .top-area {
+                grid-template-columns: 1fr;
+            }
+            .charts-and-table {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -88,11 +273,11 @@
     <div class="header">
         <div class="logo-container">
              
-            <h1>Controle Diário de Efetivo e Recursos PM</h1>
+            <h1>Serviço Ordinário - Batalhão Leste</h1>
         </div>
         <div class="controls">
             <input type="file" id="excelFileInput" class="file-input" accept=".xlsx, .xls, .csv">
-            <button id="upload-btn" class="btn-upload"><i class="fas fa-upload"></i> Carregar Nova Planilha</button>
+            <button id="upload-btn" class="btn-upload"><i class="fas fa-upload"></i> Carregar Planilha CSV</button>
         </div>
     </div>
 
@@ -125,6 +310,7 @@
                         <option value="DE FÉRIAS">DE FÉRIAS</option>
                         <option value="AFASTADO">AFASTADO</option>
                         <option value="LICENÇA">LICENÇA</option>
+                        <option value="DISPENSADO">DISPENSADO</option>
                     </select>
                 </div>
 
@@ -133,14 +319,14 @@
             <div class="metrics-grid">
                 
                 <div class="metric-card" id="totalEfetivoCard">
-                    <div class="metric-label">Total de Efetivo (Previsto)</div>
+                    <div class="metric-label">Total de Efetivo (Registrado)</div>
                     <div class="metric-value" id="totalEfetivoValue">0</div>
                     <div class="metric-subtitle">Policias cadastrados no filtro</div>
                 </div>
 
-                <div class="metric-card" id="efetivoPresenteCard" style="border-color: var(--success);">
+                <div class="metric-card" id="efetivoPresenteCard">
                     <div class="metric-label">Efetivo Presente</div>
-                    <div class="metric-value" id="efetivoPresenteValue" style="color: var(--success);">0</div>
+                    <div class="metric-value" id="efetivoPresenteValue">0</div>
                     <div class="metric-subtitle">Em serviço no filtro</div>
                 </div>
 
@@ -181,7 +367,7 @@
         </div>
         
         <div class="table-container">
-            <div class="chart-title"><i class="fas fa-table"></i> Detalhes do Efetivo Filtrado</div>
+            <div class="chart-title"><i class="fas fa-table"></i> Detalhes do Efetivo Filtrado (Primeiras 50 Linhas)</div>
             <div style="max-height: 400px; overflow-y: auto;">
                 <table class="data-table">
                     <thead>
@@ -208,18 +394,19 @@
         let allUniqueUnitsData = {}; 
 
         const corporateColors = [
-            '#1A237E',  
-            '#00BCD4',  
-            '#4CAF50',  
-            '#FFA000',  
-            '#E53935',  
-            '#303F9F',  
+            '#1f3d7a',  // Dark Blue
+            '#00BCD4',  // Cyan
+            '#388E3C',  // Green (Success)
+            '#FFA000',  // Orange (Warning)
+            '#D32F2F',  // Red (Danger)
+            '#2c509b',  // Royal Blue
             '#8BC34A',  
             '#FF8A65',  
             '#536DFE',  
             '#FDD835'   
         ];
-        // Colunas do seu CSV (Controle Serviço Ordinário - Página1.csv)
+        
+        // Mapeamento de colunas (Baseado no seu 'Controle Serviço Ordinário - Página1.csv')
         const columnMap = {
             Unidade: ['Unidade', 'unidade', 'OPM'],
             Tipo_Servico: ['Tipo de Serviço', 'TipoServico'],
@@ -227,15 +414,23 @@
             Nome_Guerra: ['Nome de Guerra', 'NomeGuerra', 'Nome'],
             Local_Atuacao: ['Local de Atuação', 'LocalAtuacao', 'Local'],
             Status_Efetivo: ['Status do Efetivo', 'StatusEfetivo', 'Status'],
+            // Corrigido para garantir que correspondem aos nomes dos campos no sampleData
             VTR_Total: ['VTR (Total)', 'VTRTotal'],
             POG_Total: ['POG (Total)', 'POGTotal']
         };
 
-        // --- FUNÇÕES DE UTILIDADE E ALERTA (MANTIDAS) ---
+        // --- FUNÇÕES DE UTILIDADE E ALERTA ---
         function findColumn(row, keys) {
             for (const key of keys) {
-                if (row[key] !== undefined) {
+                // Tenta encontrar a chave exata
+                if (row.hasOwnProperty(key)) {
                     return String(row[key]).toUpperCase().trim();
+                }
+                // Tenta encontrar a chave com variações de espaço ou caixa
+                for (const existingKey in row) {
+                    if (existingKey.toUpperCase().trim() === key.toUpperCase().trim()) {
+                        return String(row[existingKey]).toUpperCase().trim();
+                    }
                 }
             }
             return '';
@@ -245,19 +440,19 @@
             console.log(`ALERTA (${type}): ${message}`);
             const alertElement = document.createElement('div');
             alertElement.textContent = message;
-            alertElement.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 10px 20px; border-radius: 5px; color: white; z-index: 1000;';
-            alertElement.style.backgroundColor = type === 'success' ? '#43A047' : (type === 'error' ? '#E53935' : '#FFA000');
+            alertElement.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 10px 20px; border-radius: 5px; color: white; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.2);';
+            alertElement.style.backgroundColor = type === 'success' ? '#388E3C' : (type === 'error' ? '#D32F2F' : '#FFA000');
             document.body.appendChild(alertElement);
-            setTimeout(() => alertElement.remove(), 5000);
+            setTimeout(() => alertElement.remove(), 6000);
         }
         
         function showLoading(show = true) {
             console.log(show ? 'Carregando...' : 'Carregamento concluído.');
         }
 
-        // --- DADOS DE AMOSTRA PARA INICIALIZAÇÃO (Corrigido para usar nomes de colunas literais) ---
+        // --- DADOS DE AMOSTRA PARA INICIALIZAÇÃO CORRIGIDOS ---
         function loadSampleData() {
-            // Usando os nomes literais das colunas VTR (Total) e POG (Total)
+            // Os nomes das chaves aqui DEVEM corresponder exatamente aos nomes de coluna no seu CSV
             const sampleData = [
                 { "Unidade": "BATALHÃO LESTE", "Graduação": "MAJOR", "Nome de Guerra": "BRAVO", "Local de Atuação": "Comando", "Status do Efetivo": "PRESENTE", "VTR (Total)": 5, "POG (Total)": 5 },
                 { "Unidade": "BATALHÃO LESTE", "Graduação": "CAPITÃO", "Nome de Guerra": "ALFA", "Local de Atuação": "Comando", "Status do Efetivo": "DE FÉRIAS", "VTR (Total)": 5, "POG (Total)": 5 },
@@ -266,14 +461,14 @@
                 { "Unidade": "9ª CICOM", "Graduação": "SOLDADO", "Nome de Guerra": "FOXTROT", "Local de Atuação": "Setor 2", "Status do Efetivo": "AFASTADO", "VTR (Total)": 3, "POG (Total)": 3 },
                 { "Unidade": "9ª CICOM", "Graduação": "CB", "Nome de Guerra": "GAMA", "Local de Atuação": "Setor 3", "Status do Efetivo": "PRESENTE", "VTR (Total)": 3, "POG (Total)": 3 },
                 { "Unidade": "11ª CICOM", "Graduação": "SD", "Nome de Guerra": "HOTEL", "Local de Atuação": "Setor 4", "Status do Efetivo": "LICENÇA", "VTR (Total)": 4, "POG (Total)": 4 },
-                { "Unidade": "11ª CICOM", "Graduação": "TENENTE", "Nome de Guerra": "ÍNDIA", "Local de Atuação": "Comando", "Status do Efetivo": "PRESENTE", "VTR (Total)": 4, "POG (Total)": 4 }
+                { "Unidade": "11ª CICOM", "Graduação": "TENENTE", "Nome de Guerra": "ÍNDIA", "Local de Atuação": "Comando", "Status do Efetivo": "DISPENSADO", "VTR (Total)": 4, "POG (Total)": 4 }
             ];
             
             processExcelData(sampleData);
-            showAlert('Dashboard carregado com dados de amostra. Carregue sua planilha para dados reais!', 'warning');
+            showAlert('Dashboard carregado com DADOS DE AMOSTRA. Carregue sua planilha CSV para dados reais!', 'warning');
         }
 
-        // --- PROCESSAMENTO E ATUALIZAÇÃO (MANTIDOS) ---
+        // --- PROCESSAMENTO DE DADOS CORRIGIDO ---
         
         function processExcelData(jsonData) {
             showLoading(true);
@@ -288,14 +483,21 @@
                     // Mapeamento e normalização dos dados
                     const unit = findColumn(row, columnMap.Unidade);
                     const status = findColumn(row, columnMap.Status_Efetivo);
-                    // Garante que o valor lido do campo de VTR/POG (seja do CSV ou do sample) seja tratado como float
-                    const vtrTotal = parseFloat(row[columnMap.VTR_Total[0]] || 0); 
-                    const pogTotal = parseFloat(row[columnMap.POG_Total[0]] || 0);
+                    
+                    // CORREÇÃO: Tenta encontrar o valor de VTR/POG usando a chave literal (mais segura)
+                    const vtrValue = row[columnMap.VTR_Total[0]] !== undefined ? row[columnMap.VTR_Total[0]] : 0;
+                    const pogValue = row[columnMap.POG_Total[0]] !== undefined ? row[columnMap.POG_Total[0]] : 0;
+                    
+                    // Garante que o valor lido do campo de VTR/POG (seja do CSV ou do sample) seja tratado como número
+                    const vtrTotal = parseFloat(String(vtrValue).replace(',', '.') || 0); 
+                    const pogTotal = parseFloat(String(pogValue).replace(',', '.') || 0);
 
                     if (unit) {
                         validUnidades.add(unit);
                         validGraduacoes.add(findColumn(row, columnMap.Graduacao));
 
+                        // Armazena VTR/POG da unidade (a última ocorrência prevalece para a unidade)
+                        // A unidade é salva em caixa alta
                         allUniqueUnitsData[unit] = {
                             VTR: vtrTotal,
                             POG: pogTotal
@@ -315,7 +517,8 @@
                         POG_Total: pogTotal
                     };
                 }).filter(row => row.Unidade && row.Graduacao && row.Status_Efetivo); 
-
+                
+                // Finaliza o processamento
                 if (fullData.length === 0) {
                     throw new Error('Nenhum dado válido encontrado. Verifique os cabeçalhos da planilha.');
                 }
@@ -343,23 +546,15 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    // Ler com cabeçalho implícito (pode lidar melhor com colunas vazias iniciais)
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
                     
                     if (jsonData.length === 0) throw new Error('Planilha vazia.');
                     
-                    const headerRowIndex = jsonData.findIndex(row => row.some(cell => String(cell).toUpperCase().includes('UNIDADE')));
-                    if (headerRowIndex === -1) throw new Error('Cabeçalho não encontrado.');
-                    
-                    const headers = jsonData[headerRowIndex].map(h => String(h).trim());
-                    const dataRows = jsonData.slice(headerRowIndex + 1).map(row => {
-                        let obj = {};
-                        headers.forEach((header, i) => {
-                            obj[header] = row[i];
-                        });
-                        return obj;
-                    });
-                    
-                    processExcelData(dataRows);
+                    // A função sheet_to_json já tenta adivinhar o cabeçalho.
+                    // Passamos os dados diretamente para processExcelData
+                    processExcelData(jsonData);
+                    showAlert(`Planilha '${file.name}' carregada com sucesso!`, 'success');
                     
                 } catch (error) {
                     console.error('❌ Erro na leitura:', error);
@@ -377,7 +572,9 @@
             reader.readAsArrayBuffer(file);
         }
 
-        function updateFilters(unidades, graduacoes) { /* ... mantida ... */
+        // --- FUNÇÕES DE FILTROS, MÉTRICAS E GRÁFICOS (MANTIDAS) ---
+
+        function updateFilters(unidades, graduacoes) {
             const hierarchy = ["CEL", "TEN CEL", "MAJ", "CAP", "TEN", "ASP", "SUB TEN", "SGT", "CB", "SD", "AL", "POG", "CIVIL"];
             const customSort = (a, b) => {
                 const mapGrad = (g) => {
@@ -406,7 +603,7 @@
             populateSelect('graduacaoFilter', graduacoes, customSort);
         }
 
-        function filterDashboard() { /* ... mantida ... */
+        function filterDashboard() {
             const unidadeValue = document.getElementById('unidadeFilter').value;
             const graduacaoValue = document.getElementById('graduacaoFilter').value;
             const statusValue = document.getElementById('statusFilter').value;
@@ -421,13 +618,13 @@
             updateDashboardVisuals();
         }
         
-        function updateDashboardVisuals() { /* ... mantida ... */
+        function updateDashboardVisuals() {
             updateMetrics();
             updateCharts();
             updateDataTable();
         }
 
-        function updateMetrics() { /* ... mantida ... */
+        function updateMetrics() {
             const totalEfetivo = currentData.reduce((sum, row) => sum + row.Efetivo_Previsto, 0);
             const presente = currentData.reduce((sum, row) => sum + row.Efetivo_Presente, 0);
             const ausente = currentData.reduce((sum, row) => sum + row.Efetivo_Ausente, 0);
@@ -451,7 +648,7 @@
             document.getElementById('totalPOGValue').textContent = totalPOG;
         }
 
-        function getChartData(key) { /* ... mantida ... */
+        function getChartData(key) {
             const counts = {};
             currentData.forEach(row => {
                 const value = row[key];
@@ -467,7 +664,7 @@
             };
         }
 
-        function createOrUpdateChart(chartId, key, type, limit = 0) { /* ... mantida ... */
+        function createOrUpdateChart(chartId, key, type, limit = 0) {
             let { labels, data } = getChartData(key);
             
             if (limit > 0 && labels.length > limit) {
@@ -484,10 +681,10 @@
             let backgroundColors = [];
             if (key === 'Status_Efetivo') {
                  labels.forEach(label => {
-                    if (label === 'PRESENTE') backgroundColors.push(corporateColors[2]);
-                    else if (label === 'DE FÉRIAS' || label === 'LICENÇA') backgroundColors.push(corporateColors[3]);
-                    else if (label === 'AFASTADO') backgroundColors.push(corporateColors[4]);
-                    else backgroundColors.push(corporateColors[5]);
+                    if (label === 'PRESENTE') backgroundColors.push(corporateColors[2]); // Green
+                    else if (label === 'DE FÉRIAS' || label === 'LICENÇA') backgroundColors.push(corporateColors[3]); // Orange
+                    else if (label === 'AFASTADO') backgroundColors.push(corporateColors[4]); // Red
+                    else backgroundColors.push(corporateColors[5]); // Royal Blue
                 });
             } else {
                 backgroundColors = corporateColors.slice(0, labels.length);
@@ -526,12 +723,12 @@
             });
         }
 
-        function updateCharts() { /* ... mantida ... */
+        function updateCharts() {
             createOrUpdateChart('statusChart', 'Status_Efetivo', 'doughnut');
             createOrUpdateChart('unidadeChart', 'Unidade', 'bar', 10);
         }
 
-        function updateDataTable() { /* ... mantida ... */
+        function updateDataTable() {
             const tbody = document.getElementById('dataTableBody');
             tbody.innerHTML = '';
 
@@ -556,21 +753,18 @@
             });
         }
 
-        // --- INICIALIZAÇÃO GERAL ---
 
+        // --- INICIALIZAÇÃO GERAL ---
         function init() {
-            // Configuração dos eventos de upload
             document.getElementById('upload-btn').addEventListener('click', () => {
                 document.getElementById('excelFileInput').click();
             });
             document.getElementById('excelFileInput').addEventListener('change', handleFileSelect);
             
-            // Carrega os dados de amostra imediatamente ao iniciar a página
+            // Tenta carregar os dados de amostra na inicialização
             loadSampleData(); 
         }
 
-        // Ouve o evento DOMContentLoaded, que garante que todos os elementos HTML (como as tags <canvas>)
-        // foram carregados antes de tentar desenhar os gráficos e carregar os dados.
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
