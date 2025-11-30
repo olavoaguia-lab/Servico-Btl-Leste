@@ -3,132 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Serviço Ordinário - Batalhão Leste</title> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Dashboard Operacional - Batalhão Leste</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
     <style>
-        /* --- ESTILOS VISUAIS: Inspirado na Segunda Imagem (Claro e Limpo) --- */
         :root {
-            --primary-dark: #1f3d7a; /* Azul Marinho (Cabeçalho/Textos) */
-            --primary-light: #2c509b; /* Azul Royal */
-            --accent-color: #00BCD4; /* Ciano/Turquesa (Destaque) */
-            --danger: #D32F2F; /* Vermelho (Ausente) */
-            --success: #388E3C; /* Verde (Presente) */
-            --warning: #FFA000; /* Amarelo/Laranja (Recursos) */
-            --bg-color: #F8F9FA; /* Fundo Muito Claro */
-            --card-bg: #FFFFFF; /* Fundo do Card */
-            --shadow-powerbi: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra mais suave */
-            --header-bg: var(--primary-dark);
+            --primary-dark: #1a237e;
+            --primary-blue: #1976d2;
+            --accent-cyan: #00bcd4;
+            --success-green: #4caf50;
+            --warning-orange: #ff9800;
+            --danger-red: #f44336;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-bg: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
             min-height: 100vh;
-            padding: 0;
+            color: var(--text-primary);
         }
 
-        .container {
-            max-width: 1700px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* --- Cabeçalho e Controles --- */
+        /* Header com gradiente moderno */
         .header {
-            background: var(--header-bg);
+            background: var(--bg-gradient);
             color: white;
-            padding: 20px 40px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            margin-bottom: 20px;
+            padding: 24px 40px;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1800px;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 20px;
         }
-        
-        .header h1 {
-            font-size: 1.8rem;
-            font-weight: 500;
-        }
-        
-        .logo-container {
-            height: 50px;
+
+        .logo-section {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 16px;
         }
 
-        .logo-batalhao {
-            height: 100%;
-            width: auto;
-            border-radius: 50%;
-            border: 2px solid white;
-        }
-
-        .controls {
+        .logo-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
             display: flex;
-            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            backdrop-filter: blur(10px);
         }
 
-        .btn-upload {
-            background-color: var(--accent-color);
-            color: var(--primary-dark);
-            padding: 10px 20px;
-            border-radius: 5px;
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            transition: background-color 0.3s;
-            border: 2px solid var(--accent-color);
-            background-color: white;
+            font-size: 0.95rem;
             display: flex;
             align-items: center;
             gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
         }
 
-        .btn-upload:hover {
-            background-color: var(--accent-color);
+        .btn-primary {
+            background: white;
+            color: var(--primary-dark);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
             color: white;
+            border: 2px solid rgba(255,255,255,0.3);
         }
 
-        .file-input {
-            display: none;
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
         }
-        
-        /* --- Layout Principal --- */
-        .dashboard-grid {
+
+        /* Container principal */
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Grid de métricas principais */
+        .metrics-grid {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 20px;
+            margin-bottom: 24px;
         }
 
-        /* --- Área de Filtros e Métricas --- */
-        .top-area {
+        .metric-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border-left: 4px solid;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: currentColor;
+            opacity: 0.05;
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: currentColor;
+            color: white;
+            opacity: 0.9;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+            margin: 8px 0;
+        }
+
+        .metric-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .metric-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .trend-positive {
+            background: rgba(76, 175, 80, 0.1);
+            color: var(--success-green);
+        }
+
+        .trend-negative {
+            background: rgba(244, 67, 54, 0.1);
+            color: var(--danger-red);
+        }
+
+        /* Cores das métricas */
+        .metric-efetivo { border-color: var(--primary-blue); color: var(--primary-blue); }
+        .metric-presente { border-color: var(--success-green); color: var(--success-green); }
+        .metric-ausente { border-color: var(--danger-red); color: var(--danger-red); }
+        .metric-vtr { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+        .metric-pog { border-color: var(--warning-orange); color: var(--warning-orange); }
+
+        /* Layout principal com sidebar */
+        .main-layout {
             display: grid;
             grid-template-columns: 280px 1fr;
-            gap: 20px;
-        }
-        
-        .sidebar {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-powerbi);
-            height: fit-content;
+            gap: 24px;
+            margin-bottom: 24px;
         }
 
-        .sidebar h3 {
-            color: var(--primary-dark);
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
+        /* Sidebar de filtros */
+        .sidebar {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            height: fit-content;
+            position: sticky;
+            top: 120px;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .sidebar-header i {
+            font-size: 20px;
+            color: var(--primary-blue);
+        }
+
+        .sidebar-header h3 {
+            font-size: 1.1rem;
+            color: var(--text-primary);
         }
 
         .filter-group {
@@ -137,237 +285,489 @@
 
         .filter-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: 600;
-            color: #555;
-        }
-
-        .filter-group select {
-            width: 100%;
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            background-color: #fcfcfc;
-            appearance: none; 
-        }
-        
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        /* --- Cards de Métricas (KPIs) --- */
-        .metric-card {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-powerbi);
-            border-left: 5px solid;
-            transition: transform 0.3s ease;
-        }
-        
-        .metric-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
-        }
-
-        .metric-label {
             font-size: 0.9rem;
-            color: #777;
-            text-transform: uppercase;
-            font-weight: 500;
+            color: var(--text-primary);
         }
 
-        .metric-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary-dark);
-            margin-top: 5px;
-        }
-
-        .metric-subtitle {
-            font-size: 0.8rem;
-            color: #AAA;
-            margin-top: 5px;
-        }
-        
-        /* Cores dos Destaques das Métricas */
-        #totalEfetivoCard { border-color: var(--primary-dark); }
-        #efetivoPresenteCard { border-color: var(--success); }
-        #efetivoAusenteCard { border-color: var(--danger); }
-        #totalVTRCard { border-color: var(--accent-color); }
-        #totalPOGCard { border-color: var(--warning); }
-        
-        #efetivoAusenteValue { color: var(--danger); }
-        #efetivoPresenteValue { color: var(--success); }
-        #totalVTRValue { color: var(--accent-color); }
-        #totalPOGValue { color: var(--warning); }
-
-        /* --- Área de Gráficos e Tabela --- */
-        .charts-and-table {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-        }
-
-        .chart-container, .table-container {
-            background: var(--card-bg);
-            padding: 25px;
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
-            box-shadow: var(--shadow-powerbi);
+            font-size: 0.9rem;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
+
+        .filter-group select:focus, .filter-group input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            background: white;
+        }
+
+        .btn-reset {
+            width: 100%;
+            margin-top: 16px;
+            background: #f5f5f5;
+            color: var(--text-primary);
+        }
+
+        .btn-reset:hover {
+            background: #e0e0e0;
+        }
+
+        /* Grid de gráficos */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+        }
+
+        .chart-card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f0f0;
         }
 
         .chart-title {
-            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.1rem;
             font-weight: 600;
-            color: var(--primary-dark);
-            margin-bottom: 20px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
+            color: var(--text-primary);
         }
-        
+
+        .chart-title i {
+            color: var(--primary-blue);
+        }
+
         .chart-wrapper {
             position: relative;
-            height: 300px; 
+            height: 300px;
         }
-        
-        /* --- Tabela de Detalhes --- */
+
+        /* Tabela detalhada */
+        .table-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 24px;
+        }
+
+        .table-wrapper {
+            max-height: 600px;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
 
-        .data-table th, .data-table td {
-            padding: 10px 15px;
-            text-align: left;
-            border-bottom: 1px solid #f0f0f0;
+        .data-table thead {
+            position: sticky;
+            top: 0;
+            background: var(--primary-dark);
+            color: white;
+            z-index: 10;
         }
 
         .data-table th {
-            background-color: #f7f7f7;
-            color: var(--primary-dark);
+            padding: 16px;
+            text-align: left;
             font-weight: 600;
             text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
         }
-        
+
+        .data-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .data-table tbody tr {
+            transition: background 0.2s ease;
+        }
+
         .data-table tbody tr:hover {
-            background-color: #eef1f5;
+            background: #f8f9fa;
         }
-        
-        /* --- Responsividade --- */
-        @media (max-width: 1200px) {
-            .top-area {
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .status-presente { background: rgba(76, 175, 80, 0.15); color: var(--success-green); }
+        .status-ferias { background: rgba(255, 152, 0, 0.15); color: var(--warning-orange); }
+        .status-afastado { background: rgba(244, 67, 54, 0.15); color: var(--danger-red); }
+        .status-licenca { background: rgba(156, 39, 176, 0.15); color: #9c27b0; }
+        .status-dispensado { background: rgba(158, 158, 158, 0.15); color: #666; }
+
+        /* Loading spinner */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Alert messages */
+        .alert {
+            position: fixed;
+            top: 100px;
+            right: 24px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .alert-success { background: var(--success-green); }
+        .alert-error { background: var(--danger-red); }
+        .alert-warning { background: var(--warning-orange); }
+
+        /* Responsividade */
+        @media (max-width: 1400px) {
+            .main-layout {
                 grid-template-columns: 1fr;
             }
-            .charts-and-table {
+            .sidebar {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .metrics-grid {
                 grid-template-columns: 1fr;
             }
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Seção de análise por local */
+        .location-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .location-item {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-blue);
+        }
+
+        .location-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .location-count {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+
+        .location-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
         }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <div class="logo-container">
-             
-            <h1>Serviço Ordinário - Batalhão Leste</h1>
-        </div>
-        <div class="controls">
-            <input type="file" id="excelFileInput" class="file-input" accept=".xlsx, .xls, .csv">
-            <button id="upload-btn" class="btn-upload"><i class="fas fa-upload"></i> Carregar Planilha CSV</button>
-        </div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
     </div>
 
-    <div class="container dashboard-grid">
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div>
+                    <h1>Dashboard Operacional</h1>
+                    <div class="header-subtitle">Batalhão Leste - Serviço Ordinário</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv" style="display:none">
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-upload"></i> Carregar Planilha
+                </button>
+                <button class="btn btn-secondary" onclick="exportData()">
+                    <i class="fas fa-download"></i> Exportar
+                </button>
+            </div>
+        </div>
+    </header>
 
-        <div class="top-area">
-            
+    <div class="container">
+        <!-- Métricas Principais -->
+        <div class="metrics-grid">
+            <div class="metric-card metric-efetivo">
+                <div class="metric-header">
+                    <div>
+                        <div class="metric-label">Efetivo Total</div>
+                        <div class="metric-value" id="totalEfetivo">0</div>
+                        <div class="metric-subtitle">Policiais cadastrados</div>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metric-card metric-presente">
+                <div class="metric-header">
+                    <div>
+                        <div class="metric-label">Em Serviço</div>
+                        <div class="metric-value" id="totalPresente">0</div>
+                        <div class="metric-subtitle">Operando atualmente</div>
+                        <div class="metric-trend trend-positive" id="presenteTrend" style="display:none">
+                            <i class="fas fa-arrow-up"></i> <span id="presentePercent">0%</span>
+                        </div>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metric-card metric-ausente">
+                <div class="metric-header">
+                    <div>
+                        <div class="metric-label">Ausentes</div>
+                        <div class="metric-value" id="totalAusente">0</div>
+                        <div class="metric-subtitle">Férias, licenças, afastados</div>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-user-times"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metric-card metric-vtr">
+                <div class="metric-header">
+                    <div>
+                        <div class="metric-label">Viaturas (VTR)</div>
+                        <div class="metric-value" id="totalVTR">0</div>
+                        <div class="metric-subtitle">Em operação</div>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metric-card metric-pog">
+                <div class="metric-header">
+                    <div>
+                        <div class="metric-label">POGs Ativos</div>
+                        <div class="metric-value" id="totalPOG">0</div>
+                        <div class="metric-subtitle">Pontos de guarda</div>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layout Principal -->
+        <div class="main-layout">
+            <!-- Sidebar de Filtros -->
             <aside class="sidebar">
-                <h3><i class="fas fa-filter"></i> Filtros de Operação</h3>
+                <div class="sidebar-header">
+                    <i class="fas fa-filter"></i>
+                    <h3>Filtros</h3>
+                </div>
 
                 <div class="filter-group">
-                    <label for="unidadeFilter">Filtrar por Unidade:</label>
-                    <select id="unidadeFilter" onchange="filterDashboard()">
+                    <label for="unidadeFilter">
+                        <i class="fas fa-building"></i> Unidade
+                    </label>
+                    <select id="unidadeFilter" onchange="applyFilters()">
                         <option value="">Todas as Unidades</option>
                     </select>
                 </div>
 
                 <div class="filter-group">
-                    <label for="graduacaoFilter">Filtrar por Graduação:</label>
-                    <select id="graduacaoFilter" onchange="filterDashboard()">
+                    <label for="graduacaoFilter">
+                        <i class="fas fa-medal"></i> Graduação
+                    </label>
+                    <select id="graduacaoFilter" onchange="applyFilters()">
                         <option value="">Todas as Graduações</option>
                     </select>
                 </div>
-                
+
                 <div class="filter-group">
-                    <label for="statusFilter">Filtrar por Status:</label>
-                    <select id="statusFilter" onchange="filterDashboard()">
+                    <label for="statusFilter">
+                        <i class="fas fa-heartbeat"></i> Status
+                    </label>
+                    <select id="statusFilter" onchange="applyFilters()">
                         <option value="">Todos os Status</option>
-                        <option value="PRESENTE">PRESENTE</option>
-                        <option value="DE FÉRIAS">DE FÉRIAS</option>
-                        <option value="AFASTADO">AFASTADO</option>
-                        <option value="LICENÇA">LICENÇA</option>
-                        <option value="DISPENSADO">DISPENSADO</option>
+                        <option value="PRESENTE">Presente</option>
+                        <option value="DE FÉRIAS">De Férias</option>
+                        <option value="AFASTADO">Afastado</option>
+                        <option value="LICENÇA">Licença</option>
+                        <option value="DISPENSADO">Dispensado</option>
                     </select>
                 </div>
 
+                <div class="filter-group">
+                    <label for="localFilter">
+                        <i class="fas fa-map-pin"></i> Local de Atuação
+                    </label>
+                    <select id="localFilter" onchange="applyFilters()">
+                        <option value="">Todos os Locais</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="searchFilter">
+                        <i class="fas fa-search"></i> Buscar Nome
+                    </label>
+                    <input type="text" id="searchFilter" placeholder="Digite o nome..." oninput="applyFilters()">
+                </div>
+
+                <button class="btn btn-reset" onclick="resetFilters()">
+                    <i class="fas fa-redo"></i> Limpar Filtros
+                </button>
             </aside>
-            
-            <div class="metrics-grid">
-                
-                <div class="metric-card" id="totalEfetivoCard">
-                    <div class="metric-label">Total de Efetivo (Registrado)</div>
-                    <div class="metric-value" id="totalEfetivoValue">0</div>
-                    <div class="metric-subtitle">Policias cadastrados no filtro</div>
-                </div>
 
-                <div class="metric-card" id="efetivoPresenteCard">
-                    <div class="metric-label">Efetivo Presente</div>
-                    <div class="metric-value" id="efetivoPresenteValue">0</div>
-                    <div class="metric-subtitle">Em serviço no filtro</div>
-                </div>
+            <!-- Área de Conteúdo -->
+            <div class="content-area">
+                <!-- Gráficos -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title">
+                                <i class="fas fa-chart-pie"></i>
+                                Distribuição por Status
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
 
-                <div class="metric-card" id="efetivoAusenteCard">
-                    <div class="metric-label">Efetivo Ausente / Faltas</div>
-                    <div class="metric-value" id="efetivoAusenteValue">0</div>
-                    <div class="metric-subtitle">Afastados, Férias, Licença, etc.</div>
-                </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title">
+                                <i class="fas fa-building"></i>
+                                Efetivo por Unidade
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="unidadeChart"></canvas>
+                        </div>
+                    </div>
 
-                <div class="metric-card" id="totalVTRCard">
-                    <div class="metric-label">Total de VTRs em Serviço</div>
-                    <div class="metric-value" id="totalVTRValue">0</div>
-                    <div class="metric-subtitle">Viaturas na Unidade/Filtro</div>
-                </div>
-                
-                <div class="metric-card" id="totalPOGCard">
-                    <div class="metric-label">Total de POGs Ativos</div>
-                    <div class="metric-value" id="totalPOGValue">0</div>
-                    <div class="metric-subtitle">Pontos de Guarda na Unidade/Filtro</div>
-                </div>
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title">
+                                <i class="fas fa-medal"></i>
+                                Distribuição por Graduação
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="graduacaoChart"></canvas>
+                        </div>
+                    </div>
 
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title">
+                                <i class="fas fa-map-marked-alt"></i>
+                                Policiais por Local de Atuação
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="localChart"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
-
         </div>
 
-        <div class="charts-and-table">
-            
-            <div class="chart-container">
-                <div class="chart-title"><i class="fas fa-chart-pie"></i> Distribuição Percentual de Efetivo (Status)</div>
-                <div class="chart-wrapper"><canvas id="statusChart"></canvas></div>
+        <!-- Tabela Detalhada -->
+        <div class="table-card">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <i class="fas fa-table"></i>
+                    Detalhamento do Efetivo (<span id="tableCount">0</span> registros)
+                </div>
             </div>
-
-            <div class="chart-container">
-                <div class="chart-title"><i class="fas fa-sitemap"></i> Efetivo Presente por Unidade (Top 10)</div>
-                <div class="chart-wrapper"><canvas id="unidadeChart"></canvas></div>
-            </div>
-
-        </div>
-        
-        <div class="table-container">
-            <div class="chart-title"><i class="fas fa-table"></i> Detalhes do Efetivo Filtrado (Primeiras 50 Linhas)</div>
-            <div style="max-height: 400px; overflow-y: auto;">
+            <div class="table-wrapper">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -378,389 +778,111 @@
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody id="dataTableBody">
-                        </tbody>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding:40px; color:#999;">
+                                Carregue uma planilha ou visualize os dados de exemplo
+                            </td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
         </div>
-
     </div>
 
     <script>
-        let fullData = []; 
-        let currentData = []; 
-        let charts = {}; 
-        let allUniqueUnitsData = {}; 
+        let fullData = [];
+        let filteredData = [];
+        let charts = {};
+        let unitResourcesData = {};
 
-        const corporateColors = [
-            '#1f3d7a',  
-            '#00BCD4',  
-            '#388E3C',  
-            '#FFA000',  
-            '#D32F2F',  
-            '#2c509b',  
-            '#8BC34A',  
-            '#FF8A65',  
-            '#536DFE',  
-            '#FDD835'   
-        ];
-        
-        // Mapeamento de colunas
-        const columnMap = {
-            Unidade: ['Unidade', 'unidade', 'OPM'],
-            Graduacao: ['Graduação', 'graduacao'],
-            Nome_Guerra: ['Nome de Guerra', 'NomeGuerra', 'Nome'],
-            Local_Atuacao: ['Local de Atuação', 'LocalAtuacao', 'Local'],
-            Status_Efetivo: ['Status do Efetivo', 'StatusEfetivo', 'Status'],
-            // Chaves específicas para VTR e POG (nomes literais do seu CSV)
-            VTR_TOTAL_KEY: 'VTR (Total)',
-            POG_TOTAL_KEY: 'POG (Total)'
+        const COLORS = {
+            primary: ['#1976d2', '#00bcd4', '#4caf50', '#ff9800', '#f44336', '#9c27b0', '#795548', '#607d8b'],
+            status: {
+                'PRESENTE': '#4caf50',
+                'DE FÉRIAS': '#ff9800',
+                'AFASTADO': '#f44336',
+                'LICENÇA': '#9c27b0',
+                'DISPENSADO': '#757575'
+            }
         };
 
-        // --- FUNÇÕES DE UTILIDADE E ALERTA ---
+        // Mapeamento de colunas
+        const COLUMN_MAP = {
+            unidade: ['Unidade', 'unidade', 'OPM', 'opm'],
+            graduacao: ['Graduação', 'graduacao', 'Graduacao'],
+            nome: ['Nome de Guerra', 'NomeGuerra', 'Nome', 'nome'],
+            local: ['Local de Atuação', 'LocalAtuacao', 'Local', 'local'],
+            status: ['Status do Efetivo', 'StatusEfetivo', 'Status', 'status'],
+            vtr: ['VTR (Total)', 'VTR', 'vtr'],
+            pog: ['POG (Total)', 'POG', 'pog']
+        };
+
         function findColumn(row, keys) {
             for (const key of keys) {
-                // Procura por correspondência exata ou ignorando caixa/espaços extras
                 for (const existingKey in row) {
                     if (String(existingKey).toUpperCase().trim() === key.toUpperCase().trim()) {
-                        return String(row[existingKey]).toUpperCase().trim();
+                        return String(row[existingKey] || '').trim();
                     }
                 }
             }
             return '';
         }
 
-        function showAlert(message, type = 'success') {
-            console.log(`ALERTA (${type}): ${message}`);
-            const alertElement = document.createElement('div');
-            alertElement.textContent = message;
-            alertElement.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 10px 20px; border-radius: 5px; color: white; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.2);';
-            alertElement.style.backgroundColor = type === 'success' ? '#388E3C' : (type === 'error' ? '#D32F2F' : '#FFA000');
-            document.body.appendChild(alertElement);
-            setTimeout(() => alertElement.remove(), 6000);
-        }
-        
-        function showLoading(show = true) {
-            // Placeholder para um spinner de carregamento visual, se necessário
-            console.log(show ? 'Carregando...' : 'Carregamento concluído.');
+        function normalizeStatus(status) {
+            const normalized = status.toUpperCase();
+            if (normalized.includes('FÉRIAS') || normalized.includes('FERIAS')) return 'DE FÉRIAS';
+            if (normalized.includes('LICENÇA') || normalized.includes('LICENCA')) return 'LICENÇA';
+            if (normalized.includes('AFASTADO')) return 'AFASTADO';
+            if (normalized.includes('DISPENSADO')) return 'DISPENSADO';
+            if (normalized.includes('PRESENTE')) return 'PRESENTE';
+            return normalized;
         }
 
-        // --- DADOS DE AMOSTRA PARA INICIALIZAÇÃO CORRIGIDOS ---
-        function loadSampleData() {
-            // As chaves VTR (Total) e POG (Total) devem corresponder exatamente à colunaMap
-            const sampleData = [
-                { "Unidade": "BATALHÃO LESTE", "Graduação": "MAJOR", "Nome de Guerra": "BRAVO", "Local de Atuação": "Comando", "Status do Efetivo": "PRESENTE", "VTR (Total)": 5, "POG (Total)": 5 },
-                { "Unidade": "BATALHÃO LESTE", "Graduação": "CAPITÃO", "Nome de Guerra": "ALFA", "Local de Atuação": "Comando", "Status do Efetivo": "DE FÉRIAS", "VTR (Total)": 5, "POG (Total)": 5 },
-                { "Unidade": "4ª CICOM", "Graduação": "CAPITÃO", "Nome de Guerra": "DELTA", "Local de Atuação": "Comando", "Status do Efetivo": "PRESENTE", "VTR (Total)": 2, "POG (Total)": 2 },
-                { "Unidade": "4ª CICOM", "Graduação": "SARGENTO", "Nome de Guerra": "ECHO", "Local de Atuação": "Setor 1", "Status do Efetivo": "PRESENTE", "VTR (Total)": 2, "POG (Total)": 2 },
-                { "Unidade": "9ª CICOM", "Graduação": "SOLDADO", "Nome de Guerra": "FOXTROT", "Local de Atuação": "Setor 2", "Status do Efetivo": "AFASTADO", "VTR (Total)": 3, "POG (Total)": 3 },
-                { "Unidade": "9ª CICOM", "Graduação": "CB", "Nome de Guerra": "GAMA", "Local de Atuação": "Setor 3", "Status do Efetivo": "PRESENTE", "VTR (Total)": 3, "POG (Total)": 3 },
-                { "Unidade": "11ª CICOM", "Graduação": "SD", "Nome de Guerra": "HOTEL", "Local de Atuação": "Setor 4", "Status do Efetivo": "LICENÇA", "VTR (Total)": 4, "POG (Total)": 4 },
-                { "Unidade": "11ª CICOM", "Graduação": "TENENTE", "Nome de Guerra": "ÍNDIA", "Local de Atuação": "Comando", "Status do Efetivo": "DISPENSADO", "VTR (Total)": 4, "POG (Total)": 4 }
-            ];
-            
-            processExcelData(sampleData);
-            showAlert('Dashboard carregado com DADOS DE AMOSTRA. Carregue sua planilha CSV para dados reais!', 'warning');
+        function parseNumber(value) {
+            if (!value) return 0;
+            return parseFloat(String(value).replace(',', '.')) || 0;
         }
 
-        // --- PROCESSAMENTO DE DADOS CORRIGIDO ---
-        
-        function processExcelData(jsonData) {
+        function processData(jsonData) {
             showLoading(true);
             fullData = [];
-            allUniqueUnitsData = {};
-            
+            unitResourcesData = {};
+
+            const validUnits = new Set();
             const validGraduacoes = new Set();
-            const validUnidades = new Set();
+            const validLocais = new Set();
 
-            try {
-                fullData = jsonData.map(row => {
-                    // Mapeamento e normalização dos dados
-                    const unit = findColumn(row, columnMap.Unidade);
-                    const status = findColumn(row, columnMap.Status_Efetivo);
-                    
-                    // Lê VTR/POG usando a chave literal (mais segura) e trata como número
-                    const getNumericValue = (key) => {
-                        // Tenta encontrar o valor pela chave exata ou pela chave normalizada
-                        const value = row[key] !== undefined ? row[key] : (row[key.toUpperCase()] !== undefined ? row[key.toUpperCase()] : 0);
-                        
-                        // Garante que o valor seja tratado como float, substituindo vírgula por ponto
-                        return parseFloat(String(value).replace(',', '.') || 0);
-                    }
-
-                    const vtrTotal = getNumericValue(columnMap.VTR_TOTAL_KEY); 
-                    const pogTotal = getNumericValue(columnMap.POG_TOTAL_KEY);
-
-                    if (unit) {
-                        validUnidades.add(unit);
-                        validGraduacoes.add(findColumn(row, columnMap.Graduacao));
-
-                        // Armazena VTR/POG da unidade (a última ocorrência prevalece para a unidade)
-                        allUniqueUnitsData[unit] = {
-                            VTR: vtrTotal,
-                            POG: pogTotal
-                        };
-                    }
-
-                    return {
-                        Unidade: unit,
-                        Graduacao: findColumn(row, columnMap.Graduacao),
-                        Nome_Guerra: findColumn(row, columnMap.Nome_Guerra),
-                        Local_Atuacao: findColumn(row, columnMap.Local_Atuacao),
-                        Status_Efetivo: status,
-                        Efetivo_Presente: status === 'PRESENTE' ? 1 : 0,
-                        Efetivo_Ausente: status !== 'PRESENTE' ? 1 : 0,
-                        Efetivo_Previsto: 1, 
-                        VTR_Total: vtrTotal,
-                        POG_Total: pogTotal
-                    };
-                }).filter(row => row.Unidade && row.Graduacao && row.Status_Efetivo); 
+            jsonData.forEach(row => {
+                const unidade = findColumn(row, COLUMN_MAP.unidade);
+                const graduacao = findColumn(row, COLUMN_MAP.graduacao);
+                const nome = findColumn(row, COLUMN_MAP.nome);
+                const local = findColumn(row, COLUMN_MAP.local);
+                const status = normalizeStatus(findColumn(row, COLUMN_MAP.status));
                 
-                if (fullData.length === 0) {
-                    throw new Error('Nenhum dado válido encontrado. Verifique os cabeçalhos da planilha.');
-                }
-                
-                updateFilters(Array.from(validUnidades), Array.from(validGraduacoes));
-                filterDashboard(); 
+                const vtr = parseNumber(findColumn(row, COLUMN_MAP.vtr));
+                const pog = parseNumber(findColumn(row, COLUMN_MAP.pog));
 
-            } catch (error) {
-                showAlert('❌ Erro no processamento: ' + error.message, 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            showLoading(true);
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                try {
-                    const data = e.target.result;
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    
-                    // Lê os dados, usando a primeira linha com dados como cabeçalho
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-                    
-                    if (jsonData.length === 0) throw new Error('Planilha vazia.');
-                    
-                    processExcelData(jsonData);
-                    showAlert(`Planilha '${file.name}' carregada com sucesso!`, 'success');
-                    
-                } catch (error) {
-                    console.error('❌ Erro na leitura:', error);
-                    showAlert('❌ Erro ao ler arquivo: ' + error.message, 'error');
-                } finally {
-                    showLoading(false);
-                }
-            };
-            
-            reader.onerror = function(error) {
-                showAlert('❌ Erro ao ler o arquivo selecionado', 'error');
-                showLoading(false);
-            };
-            
-            reader.readAsArrayBuffer(file);
-        }
-
-        // --- FUNÇÕES DE FILTROS, MÉTRICAS, GRÁFICOS E TABELAS (Mantidas) ---
-
-        function updateFilters(unidades, graduacoes) { 
-            const hierarchy = ["CEL", "TEN CEL", "MAJ", "CAP", "TEN", "ASP", "SUB TEN", "SGT", "CB", "SD", "AL", "POG", "CIVIL"];
-            const customSort = (a, b) => {
-                const mapGrad = (g) => {
-                    const base = hierarchy.findIndex(h => g.includes(h))
-                    return base === -1 ? 99 : base; 
-                };
-                return mapGrad(a) - mapGrad(b) || a.localeCompare(b);
-            };
-
-            const populateSelect = (elementId, items, sorter = null) => {
-                const select = document.getElementById(elementId);
-                const currentValue = select.value;
-                select.innerHTML = `<option value="">Todas ${elementId.includes('unidade') ? 'as Unidades' : 'as Graduações'}</option>`;
-                
-                const sortedItems = sorter ? items.sort(sorter) : items.sort();
-                sortedItems.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item;
-                    option.textContent = item;
-                    if (item === currentValue) option.selected = true;
-                    select.appendChild(option);
-                });
-            };
-
-            populateSelect('unidadeFilter', unidades);
-            populateSelect('graduacaoFilter', graduacoes, customSort);
-        }
-
-        function filterDashboard() { 
-            const unidadeValue = document.getElementById('unidadeFilter').value;
-            const graduacaoValue = document.getElementById('graduacaoFilter').value;
-            const statusValue = document.getElementById('statusFilter').value;
-
-            currentData = fullData.filter(row => {
-                const unidadeMatch = !unidadeValue || row.Unidade === unidadeValue;
-                const gradMatch = !graduacaoValue || row.Graduacao === graduacaoValue;
-                const statusMatch = !statusValue || row.Status_Efetivo === statusValue;
-                return unidadeMatch && gradMatch && statusMatch;
-            });
-            
-            updateDashboardVisuals();
-        }
-        
-        function updateDashboardVisuals() { 
-            updateMetrics();
-            updateCharts();
-            updateDataTable();
-        }
-
-        function updateMetrics() { 
-            const totalEfetivo = currentData.reduce((sum, row) => sum + row.Efetivo_Previsto, 0);
-            const presente = currentData.reduce((sum, row) => sum + row.Efetivo_Presente, 0);
-            const ausente = currentData.reduce((sum, row) => sum + row.Efetivo_Ausente, 0);
-            
-            const unidadesNoFiltro = new Set(currentData.map(row => row.Unidade));
-            let totalVTR = 0;
-            let totalPOG = 0;
-
-            unidadesNoFiltro.forEach(unit => {
-                const unitData = allUniqueUnitsData[unit];
-                if (unitData) {
-                    totalVTR += unitData.VTR;
-                    totalPOG += unitData.POG;
-                }
-            });
-
-            document.getElementById('totalEfetivoValue').textContent = totalEfetivo;
-            document.getElementById('efetivoPresenteValue').textContent = presente;
-            document.getElementById('efetivoAusenteValue').textContent = ausente;
-            document.getElementById('totalVTRValue').textContent = totalVTR;
-            document.getElementById('totalPOGValue').textContent = totalPOG;
-        }
-
-        function getChartData(key) { 
-            const counts = {};
-            currentData.forEach(row => {
-                const value = row[key];
-                counts[value] = (counts[value] || 0) + 1;
-            });
-
-            let sorted = Object.keys(counts).map(label => ({ label, data: counts[label] }))
-                .sort((a, b) => b.data - a.data);
-
-            return {
-                labels: sorted.map(item => item.label),
-                data: sorted.map(item => item.data),
-            };
-        }
-
-        function createOrUpdateChart(chartId, key, type, limit = 0) { 
-            let { labels, data } = getChartData(key);
-            
-            if (limit > 0 && labels.length > limit) {
-                const otherData = data.slice(limit).reduce((a, b) => a + b, 0);
-                labels = [...labels.slice(0, limit), 'OUTRAS'];
-                data = [...data.slice(0, limit), otherData];
-            }
-            
-            const ctx = document.getElementById(chartId).getContext('2d');
-            if (charts[chartId]) {
-                charts[chartId].destroy();
-            }
-
-            let backgroundColors = [];
-            if (key === 'Status_Efetivo') {
-                 labels.forEach(label => {
-                    if (label === 'PRESENTE') backgroundColors.push(corporateColors[2]);
-                    else if (label === 'DE FÉRIAS' || label === 'LICENÇA') backgroundColors.push(corporateColors[3]);
-                    else if (label === 'AFASTADO') backgroundColors.push(corporateColors[4]);
-                    else backgroundColors.push(corporateColors[5]);
-                });
-            } else {
-                backgroundColors = corporateColors.slice(0, labels.length);
-            }
-            
-            charts[chartId] = new Chart(ctx, {
-                type: type,
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Nº de Policiais',
-                        data: data,
-                        backgroundColor: backgroundColors,
-                        borderColor: type === 'bar' ? corporateColors[0] : 'white',
-                        borderWidth: type === 'bar' ? 1 : 2,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: type !== 'bar',
-                            position: 'right',
-                        },
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            display: type === 'bar',
-                            ticks: { precision: 0 }
-                        },
-                        x: { display: type === 'bar' }
+                if (unidade) {
+                    validUnits.add(unidade);
+                    if (!unitResourcesData[unidade]) {
+                        unitResourcesData[unidade] = { VTR: 0, POG: 0 };
                     }
+                    if (vtr > 0) unitResourcesData[unidade].VTR = vtr;
+                    if (pog > 0) unitResourcesData[unidade].POG = pog;
                 }
-            });
-        }
 
-        function updateCharts() { 
-            createOrUpdateChart('statusChart', 'Status_Efetivo', 'doughnut');
-            createOrUpdateChart('unidadeChart', 'Unidade', 'bar', 10);
-        }
+                if (graduacao) validGraduacoes.add(graduacao);
+                if (local) validLocais.add(local);
 
-        function updateDataTable() { 
-            const tbody = document.getElementById('dataTableBody');
-            tbody.innerHTML = '';
-
-            if (currentData.length === 0) {
-                tbody.innerHTML = `<tr> <td colspan="5" style="text-align: center; padding: 30px; color: #7f8c8d;">Nenhum registro encontrado para os filtros aplicados.</td> </tr>`;
-                return;
-            }
-
-            const limitedData = currentData.slice(0, 50);
-
-            limitedData.forEach(row => {
-                const tr = document.createElement('tr');
-                const statusColor = row.Status_Efetivo === 'PRESENTE' ? 'var(--success)' : 'var(--danger)';
-                tr.innerHTML = `
-                    <td>${row.Unidade}</td>
-                    <td>${row.Graduacao}</td>
-                    <td>${row.Nome_Guerra}</td>
-                    <td>${row.Local_Atuacao}</td>
-                    <td><span style="font-weight: 600; color: ${statusColor};">${row.Status_Efetivo}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-
-        // --- INICIALIZAÇÃO GERAL ---
-        function init() {
-            document.getElementById('upload-btn').addEventListener('click', () => {
-                document.getElementById('excelFileInput').click();
-            });
-            document.getElementById('excelFileInput').addEventListener('change', handleFileSelect);
-            
-            loadSampleData(); 
-        }
-
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
-</body>
-</html>
+                if (unidade && status) {
+                    fullData.push({
+                        unidade,
+                        graduacao,
+                        nome,
+                        local,
+                        status,
+                        presente: status === 'PRESENTE' ? 1 : 0,
+                        ausente: status !== 'PRESENTE' ? 1 : 0
+                    });
+                }
