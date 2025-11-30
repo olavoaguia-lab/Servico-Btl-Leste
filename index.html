@@ -509,40 +509,10 @@
             }
         }
 
-        /* Seção de análise por local */
-        .location-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
-            margin-top: 20px;
-        }
-
-        .location-item {
-            background: #f8f9fa;
-            padding: 16px;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary-blue);
-        }
-
-        .location-name {
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
-
-        .location-count {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-blue);
-        }
-
-        .location-subtitle {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
+        /* Seção de análise por local - Removida para simplificar o Dashboard principal, mas mantida no CSS. */
     </style>
 </head>
-<body>
+<body onload="loadDefaultData()">
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
     </div>
@@ -571,7 +541,6 @@
     </header>
 
     <div class="container">
-        <!-- Métricas Principais -->
         <div class="metrics-grid">
             <div class="metric-card metric-efetivo">
                 <div class="metric-header">
@@ -589,7 +558,7 @@
             <div class="metric-card metric-presente">
                 <div class="metric-header">
                     <div>
-                        <div class="metric-label">Em Serviço</div>
+                        <div class="metric-label">Em Serviço (PRESENTE)</div>
                         <div class="metric-value" id="totalPresente">0</div>
                         <div class="metric-subtitle">Operando atualmente</div>
                         <div class="metric-trend trend-positive" id="presenteTrend" style="display:none">
@@ -620,7 +589,7 @@
                     <div>
                         <div class="metric-label">Viaturas (VTR)</div>
                         <div class="metric-value" id="totalVTR">0</div>
-                        <div class="metric-subtitle">Em operação</div>
+                        <div class="metric-subtitle">Total na área do Batalhão</div>
                     </div>
                     <div class="metric-icon">
                         <i class="fas fa-car"></i>
@@ -642,9 +611,7 @@
             </div>
         </div>
 
-        <!-- Layout Principal -->
         <div class="main-layout">
-            <!-- Sidebar de Filtros -->
             <aside class="sidebar">
                 <div class="sidebar-header">
                     <i class="fas fa-filter"></i>
@@ -662,10 +629,10 @@
 
                 <div class="filter-group">
                     <label for="graduacaoFilter">
-                        <i class="fas fa-medal"></i> Graduação
+                        <i class="fas fa-medal"></i> Posto/Graduação
                     </label>
                     <select id="graduacaoFilter" onchange="applyFilters()">
-                        <option value="">Todas as Graduações</option>
+                        <option value="">Todos os Postos/Grads</option>
                     </select>
                 </div>
 
@@ -675,11 +642,11 @@
                     </label>
                     <select id="statusFilter" onchange="applyFilters()">
                         <option value="">Todos os Status</option>
-                        <option value="PRESENTE">Presente</option>
-                        <option value="DE FÉRIAS">De Férias</option>
-                        <option value="AFASTADO">Afastado</option>
-                        <option value="LICENÇA">Licença</option>
-                        <option value="DISPENSADO">Dispensado</option>
+                        <option value="PRESENTE">PRESENTE</option>
+                        <option value="DE FÉRIAS">DE FÉRIAS</option>
+                        <option value="AFASTADO">AFASTADO</option>
+                        <option value="LICENÇA">LICENÇA</option>
+                        <option value="DISPENSADO">DISPENSADO</option>
                     </select>
                 </div>
 
@@ -704,9 +671,7 @@
                 </button>
             </aside>
 
-            <!-- Área de Conteúdo -->
             <div class="content-area">
-                <!-- Gráficos -->
                 <div class="charts-grid">
                     <div class="chart-card">
                         <div class="chart-header">
@@ -724,7 +689,7 @@
                         <div class="chart-header">
                             <div class="chart-title">
                                 <i class="fas fa-building"></i>
-                                Efetivo por Unidade
+                                Efetivo por Unidade (Filtrado)
                             </div>
                         </div>
                         <div class="chart-wrapper">
@@ -736,7 +701,7 @@
                         <div class="chart-header">
                             <div class="chart-title">
                                 <i class="fas fa-medal"></i>
-                                Distribuição por Graduação
+                                Distribuição por Posto/Graduação
                             </div>
                         </div>
                         <div class="chart-wrapper">
@@ -759,7 +724,6 @@
             </div>
         </div>
 
-        <!-- Tabela Detalhada -->
         <div class="table-card">
             <div class="chart-header">
                 <div class="chart-title">
@@ -772,7 +736,7 @@
                     <thead>
                         <tr>
                             <th>Unidade</th>
-                            <th>Graduação</th>
+                            <th>Posto/Grad</th>
                             <th>Nome de Guerra</th>
                             <th>Local de Atuação</th>
                             <th>Status</th>
@@ -795,6 +759,7 @@
         let filteredData = [];
         let charts = {};
         let unitResourcesData = {};
+        let defaultDataLoaded = false; // Flag para rastrear se os dados de exemplo foram carregados
 
         const COLORS = {
             primary: ['#1976d2', '#00bcd4', '#4caf50', '#ff9800', '#f44336', '#9c27b0', '#795548', '#607d8b'],
@@ -807,17 +772,19 @@
             }
         };
 
-        // Mapeamento de colunas
+        // Mapeamento de colunas para robustez contra diferentes nomes de cabeçalho
         const COLUMN_MAP = {
             unidade: ['Unidade', 'unidade', 'OPM', 'opm'],
-            graduacao: ['Graduação', 'graduacao', 'Graduacao'],
-            nome: ['Nome de Guerra', 'NomeGuerra', 'Nome', 'nome'],
-            local: ['Local de Atuação', 'LocalAtuacao', 'Local', 'local'],
-            status: ['Status do Efetivo', 'StatusEfetivo', 'Status', 'status'],
+            graduacao: ['Posto/GRAD', 'Posto/Grad', 'POSTO/GRAD', 'GRADUAÇÃO', 'Graduacao', 'POSTO', 'GRAD'],
+            nome: ['Nome de Guerra', 'NomeGuerra', 'NOME DE GUERRA', 'Nome', 'nome'],
+            local: ['Local de Atuação', 'LocalAtuacao', 'LOCAL DE ATUAÇÃO', 'Local', 'local'],
+            status: ['Status do Efetivo', 'StatusEfetivo', 'STATUS DO EFETIVO', 'Status', 'status'],
             vtr: ['VTR (Total)', 'VTR', 'vtr'],
             pog: ['POG (Total)', 'POG', 'pog']
         };
 
+        // FUNÇÕES DE UTILIDADE
+        // Encontra o valor da coluna independentemente da capitalização ou nome exato
         function findColumn(row, keys) {
             for (const key of keys) {
                 for (const existingKey in row) {
@@ -829,6 +796,7 @@
             return '';
         }
 
+        // Normaliza o status para um conjunto padrão
         function normalizeStatus(status) {
             const normalized = status.toUpperCase();
             if (normalized.includes('FÉRIAS') || normalized.includes('FERIAS')) return 'DE FÉRIAS';
@@ -839,11 +807,31 @@
             return normalized;
         }
 
+        // Converte valor para número (usado para VTR e POG)
         function parseNumber(value) {
             if (!value) return 0;
             return parseFloat(String(value).replace(',', '.')) || 0;
         }
 
+        // Exibe/oculta o spinner de carregamento
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('active', show);
+        }
+
+        // Exibe uma mensagem de alerta temporária
+        function showAlert(message, type = 'success') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            document.body.appendChild(alert);
+
+            setTimeout(() => {
+                alert.style.opacity = 0;
+                setTimeout(() => alert.remove(), 300);
+            }, 3000);
+        }
+
+        // FUNÇÕES PRINCIPAIS DE DADOS E RENDERIZAÇÃO
         function processData(jsonData) {
             showLoading(true);
             fullData = [];
@@ -854,12 +842,14 @@
             const validLocais = new Set();
 
             jsonData.forEach(row => {
+                // Usando POSTO/GRAD para melhor aderência à planilha de exemplo
+                const graduacaoRaw = findColumn(row, ['POSTO/GRAD', ...COLUMN_MAP.graduacao]);
                 const unidade = findColumn(row, COLUMN_MAP.unidade);
-                const graduacao = findColumn(row, COLUMN_MAP.graduacao);
                 const nome = findColumn(row, COLUMN_MAP.nome);
                 const local = findColumn(row, COLUMN_MAP.local);
                 const status = normalizeStatus(findColumn(row, COLUMN_MAP.status));
-                
+
+                // Apenas pega VTR e POG uma vez por unidade para o total
                 const vtr = parseNumber(findColumn(row, COLUMN_MAP.vtr));
                 const pog = parseNumber(findColumn(row, COLUMN_MAP.pog));
 
@@ -868,17 +858,18 @@
                     if (!unitResourcesData[unidade]) {
                         unitResourcesData[unidade] = { VTR: 0, POG: 0 };
                     }
+                    // O valor do total VTR/POG deve ser o mesmo para todos na mesma unidade na planilha
                     if (vtr > 0) unitResourcesData[unidade].VTR = vtr;
                     if (pog > 0) unitResourcesData[unidade].POG = pog;
                 }
 
-                if (graduacao) validGraduacoes.add(graduacao);
+                if (graduacaoRaw) validGraduacoes.add(graduacaoRaw);
                 if (local) validLocais.add(local);
 
                 if (unidade && status) {
                     fullData.push({
                         unidade,
-                        graduacao,
+                        graduacao: graduacaoRaw,
                         nome,
                         local,
                         status,
@@ -886,3 +877,319 @@
                         ausente: status !== 'PRESENTE' ? 1 : 0
                     });
                 }
+            });
+            
+            // Preenche os filtros com base nos dados brutos
+            populateFilters(validUnits, validGraduacoes, validLocais);
+            
+            // Aplica os filtros para renderizar a primeira vez
+            applyFilters();
+            
+            showLoading(false);
+            showAlert('Dados da Planilha Carregados com Sucesso!', 'success');
+        }
+
+        function populateFilters(units, graduacoes, locais) {
+            const unidadeFilter = document.getElementById('unidadeFilter');
+            const graduacaoFilter = document.getElementById('graduacaoFilter');
+            const localFilter = document.getElementById('localFilter');
+
+            // Limpa e repopula Unidade
+            unidadeFilter.innerHTML = '<option value="">Todas as Unidades</option>';
+            [...units].sort().forEach(unit => {
+                unidadeFilter.innerHTML += `<option value="${unit}">${unit}</option>`;
+            });
+
+            // Limpa e repopula Posto/Graduação
+            graduacaoFilter.innerHTML = '<option value="">Todos os Postos/Grads</option>';
+            [...graduacoes].sort().forEach(grad => {
+                graduacaoFilter.innerHTML += `<option value="${grad}">${grad}</option>`;
+            });
+
+            // Limpa e repopula Local de Atuação
+            localFilter.innerHTML = '<option value="">Todos os Locais</option>';
+            [...locais].sort().forEach(local => {
+                localFilter.innerHTML += `<option value="${local}">${local}</option>`;
+            });
+        }
+
+        function applyFilters() {
+            const unidade = document.getElementById('unidadeFilter').value;
+            const graduacao = document.getElementById('graduacaoFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            const local = document.getElementById('localFilter').value;
+            const search = document.getElementById('searchFilter').value.toLowerCase();
+
+            filteredData = fullData.filter(item => {
+                const matchesUnidade = !unidade || item.unidade === unidade;
+                const matchesGraduacao = !graduacao || item.graduacao === graduacao;
+                const matchesStatus = !status || item.status === status;
+                const matchesLocal = !local || item.local === local;
+                const matchesSearch = !search || item.nome.toLowerCase().includes(search);
+
+                return matchesUnidade && matchesGraduacao && matchesStatus && matchesLocal && matchesSearch;
+            });
+
+            updateMetrics();
+            renderCharts();
+            renderTable();
+        }
+
+        function resetFilters() {
+            document.getElementById('unidadeFilter').value = '';
+            document.getElementById('graduacaoFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('localFilter').value = '';
+            document.getElementById('searchFilter').value = '';
+            applyFilters();
+        }
+
+        function updateMetrics() {
+            const totalEfetivo = fullData.length;
+            const totalPresente = filteredData.filter(d => d.status === 'PRESENTE').length;
+            const totalAusente = filteredData.length - totalPresente;
+
+            // Soma os recursos das unidades, usando fullData para o total de VTR/POG
+            const totalVTR = Object.values(unitResourcesData).reduce((sum, res) => sum + res.VTR, 0);
+            const totalPOG = Object.values(unitResourcesData).reduce((sum, res) => sum + res.POG, 0);
+
+            // Atualiza os cartões de métricas
+            document.getElementById('totalEfetivo').textContent = totalEfetivo;
+            document.getElementById('totalPresente').textContent = totalPresente;
+            document.getElementById('totalAusente').textContent = totalAusente;
+            document.getElementById('totalVTR').textContent = totalVTR;
+            document.getElementById('totalPOG').textContent = totalPOG;
+        }
+
+        function renderCharts() {
+            // 1. Distribuição por Status
+            const statusCount = filteredData.reduce((acc, item) => {
+                acc[item.status] = (acc[item.status] || 0) + 1;
+                return acc;
+            }, {});
+
+            const statusLabels = Object.keys(statusCount).sort((a, b) => statusCount[b] - statusCount[a]);
+            const statusData = statusLabels.map(label => statusCount[label]);
+            const statusColors = statusLabels.map(label => COLORS.status[label] || COLORS.primary[5]);
+
+            createChart('statusChart', 'doughnut', statusLabels, statusData, statusColors, 'Distribuição por Status');
+
+            // 2. Efetivo por Unidade
+            const unidadeCount = filteredData.reduce((acc, item) => {
+                acc[item.unidade] = (acc[item.unidade] || 0) + 1;
+                return acc;
+            }, {});
+
+            const unidadeLabels = Object.keys(unidadeCount).sort();
+            const unidadeData = unidadeLabels.map(label => unidadeCount[label]);
+
+            createChart('unidadeChart', 'bar', unidadeLabels, unidadeData, COLORS.primary[0], 'Efetivo por Unidade (Total)');
+
+            // 3. Distribuição por Posto/Graduação
+            const graduacaoCount = filteredData.reduce((acc, item) => {
+                acc[item.graduacao] = (acc[item.graduacao] || 0) + 1;
+                return acc;
+            }, {});
+
+            const graduacaoLabels = Object.keys(graduacaoCount).sort();
+            const graduacaoData = graduacaoLabels.map(label => graduacaoCount[label]);
+
+            createChart('graduacaoChart', 'pie', graduacaoLabels, graduacaoData, COLORS.primary, 'Distribuição por Posto/Grad');
+
+            // 4. Policiais por Local de Atuação
+            const localCount = filteredData.reduce((acc, item) => {
+                acc[item.local] = (acc[item.local] || 0) + 1;
+                return acc;
+            }, {});
+
+            const localLabels = Object.keys(localCount).sort();
+            const localData = localLabels.map(label => localCount[label]);
+
+            createChart('localChart', 'bar', localLabels, localData, COLORS.primary[1], 'Efetivo por Local de Atuação');
+        }
+
+        function createChart(canvasId, type, labels, data, backgroundColor, labelText) {
+            if (charts[canvasId]) {
+                charts[canvasId].destroy();
+            }
+
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            charts[canvasId] = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: labelText,
+                        data: data,
+                        backgroundColor: Array.isArray(backgroundColor) ? backgroundColor : backgroundColor,
+                        borderColor: Array.isArray(backgroundColor) ? backgroundColor : backgroundColor,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: type === 'doughnut' || type === 'pie' ? 'right' : 'top',
+                            labels: {
+                                color: var('--text-primary'),
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: (type === 'bar' || type === 'line') ? {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: var('--text-secondary')
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: var('--text-secondary')
+                            }
+                        }
+                    } : {}
+                }
+            });
+        }
+
+        function getStatusClass(status) {
+            const normalized = status.toUpperCase().replace(/ /g, '-');
+            return `status-${normalized}`;
+        }
+
+        function renderTable() {
+            const tableBody = document.getElementById('tableBody');
+            const tableCount = document.getElementById('tableCount');
+            tableBody.innerHTML = ''; // Limpa a tabela
+
+            tableCount.textContent = filteredData.length;
+
+            if (filteredData.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align:center; padding:40px; color:#999;">
+                            Nenhum registro encontrado com os filtros aplicados.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filteredData.forEach(item => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${item.unidade}</td>
+                    <td>${item.graduacao}</td>
+                    <td>${item.nome}</td>
+                    <td>${item.local}</td>
+                    <td><span class="status-badge ${getStatusClass(item.status)}">${item.status}</span></td>
+                `;
+            });
+        }
+
+        // MANIPULAÇÃO DE ARQUIVOS (Planilha)
+        document.getElementById('fileInput').addEventListener('change', handleFile, false);
+
+        function handleFile(e) {
+            const files = e.target.files;
+            if (files.length === 0) return;
+            const file = files[0];
+            
+            showLoading(true);
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    
+                    // Converte para JSON. header: 1 força a primeira linha como cabeçalho.
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    processData(json);
+                    defaultDataLoaded = false;
+                    document.getElementById('fileInput').value = ''; // Limpa o input
+                } catch (error) {
+                    showLoading(false);
+                    showAlert('Erro ao processar a planilha. Verifique o formato do arquivo.', 'error');
+                    console.error("Erro ao ler arquivo:", error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function exportData() {
+            if (filteredData.length === 0) {
+                showAlert('Não há dados para exportar.', 'warning');
+                return;
+            }
+
+            // Mapeia os dados filtrados para um formato de exportação
+            const exportData = filteredData.map(item => ({
+                'Unidade': item.unidade,
+                'Posto/Graduação': item.graduacao,
+                'Nome de Guerra': item.nome,
+                'Local de Atuação': item.local,
+                'Status': item.status
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Efetivo Filtrado");
+            
+            XLSX.writeFile(workbook, "Dashboard_Efetivo_Exportado.xlsx");
+            showAlert('Dados exportados com sucesso!', 'success');
+        }
+
+        // FUNÇÃO PARA CARREGAR DADOS DE EXEMPLO (DA PLANILHA ANEXA)
+        function loadDefaultData() {
+             if (defaultDataLoaded) return;
+             
+             // Os dados de exemplo extraídos da sua planilha "Controle Serviço Ordinário dia 29.csv"
+             // Atenção: A coluna POSTO/GRAD foi usada como 'graduacaoRaw' no processamento.
+             const defaultData = [
+                {"UNIDADE":"Batalhão Leste","TIPO DE SERVIÇO":"VTR","funçâo":"cmt","POSTO/GRAD":"MAJOR","NOME DE GUERRA":"OLAVO","IDENTIDADE":"12345","LOCAL DE ATUAÇÃO":"Comando","STATUS DO EFETIVO":"PRESENTE","VTR (Total)":5,"POG (Total)":5},
+                {"UNIDADE":"Batalhão Leste","TIPO DE SERVIÇO":"POG","funçâo":"motorista","POSTO/GRAD":"MAJOR","NOME DE GUERRA":"BRUNO","IDENTIDADE":"12345","LOCAL DE ATUAÇÃO":"Comando","STATUS DO EFETIVO":"PRESENTE","VTR (Total)":5,"POG (Total)":5},
+                {"UNIDADE":"4ª CICOM","TIPO DE SERVIÇO":"","funçâo":"comandante","POSTO/GRAD":"CAPITÃO","NOME DE GUERRA":"MILTON","IDENTIDADE":"44444","LOCAL DE ATUAÇÃO":"Comando","STATUS DO EFETIVO":"PRESENTE","VTR (Total)":2,"POG (Total)":2},
+                {"UNIDADE":"4ª CICOM","TIPO DE SERVIÇO":"","funçâo":"","POSTO/GRAD":"CAPITÃO","NOME DE GUERRA":"DELTA","IDENTIDADE":"44444","LOCAL DE ATUAÇÃO":"Comando","STATUS DO EFETIVO":"PRESENTE","VTR (Total)":2,"POG (Total)":2},
+                {"UNIDADE":"4ª CICOM","TIPO DE SERVIÇO":"","funçâo":"","POSTO/GRAD":"CAPITÃO","NOME DE GUERRA":"DELTA","IDENTIDADE":"44444","LOCAL DE ATUAÇÃO":"Comando","STATUS DO EFETIVO":"PRESENTE","VTR (Total)":2,"POG (Total)":2},
+                {"UNIDADE":"9ª CICOM","TIPO DE SERVIÇO":"","funçâo":"","POSTO/GRAD":"SARGENTO","NOME DE GUERRA":"ECHO","IDENTIDADE":"99999","LOCAL DE ATUAÇÃO":"Setor 1","STATUS DO EFETIVO":"PRESENTE","VTR (Total)":3,"POG (Total)":3},
+                {"UNIDADE":"11ª CICOM","TIPO DE SERVIÇO":"","funçâo":"","POSTO/GRAD":"SOLDADO","NOME DE GUERRA":"FOXTROT","IDENTIDADE":"11111","LOCAL DE ATUAÇÃO":"Setor 2","STATUS DO EFETIVO":"DE FÉRIAS","VTR (Total)":4,"POG (Total)":4},
+                {"UNIDADE":"14ª CICOM","TIPO DE SERVIÇO":"","funçâo":"","POSTO/GRAD":"SOLDADO","NOME DE GUERRA":"FOXTROT","IDENTIDADE":"11111","LOCAL DE ATUAÇÃO":"Setor 2","STATUS DO EFETIVO":"DE FÉRIAS","VTR (Total)":4,"POG (Total)":4},
+                {"UNIDADE":"25ª CICOM","TIPO DE SERVIÇO":"","funçâo":"","POSTO/GRAD":"SOLDADO","NOME DE GUERRA":"FOXTROT","IDENTIDADE":"11111","LOCAL DE ATUAÇÃO":"Setor 2","STATUS DO EFETIVO":"DE FÉRIAS","VTR (Total)":4,"POG (Total)":4},
+                {"UNIDADE":"28ª CICOM","TIPO DE SERVIÇO":"","funçâo":"","POSTO/GRAD":"SOLDADO","NOME DE GUERRA":"FOXTROT","IDENTIDADE":"11111","LOCAL DE ATUAÇÃO":"Setor 2","STATUS DO EFETIVO":"DE FÉRIAS","VTR (Total)":4,"POG (Total)":4},
+                {"UNIDADE":"29ª CICOM","TIPO DE SERVIÇO":"","funçâo":"","POSTO/GRAD":"SOLDADO","NOME DE GUERRA":"FOXTROT","IDENTIDADE":"11111","LOCAL DE ATUAÇÃO":"Setor 2","STATUS DO EFETIVO":"DE FÉRIAS","VTR (Total)":4,"POG (Total)":4},
+                {"UNIDADE":"30ª CICOM","TIPO DE SERVIÇO":"","funçâo":"","POSTO/GRAD":"SOLDADO","NOME DE GUERRA":"FOXTROT","IDENTIDADE":"11111","LOCAL DE ATUAÇÃO":"Setor 2","STATUS DO EFETIVO":"DE FÉRIAS","VTR (Total)":4,"POG (Total)":4}
+            ];
+
+             processData(defaultData);
+             defaultDataLoaded = true;
+             showAlert('Dados de Exemplo Carregados (29/11)', 'warning');
+        }
+
+        // Inicialização de Gráficos vazios no carregamento, se necessário
+        window.addEventListener('load', () => {
+             // Garante que o Chart.js está pronto
+             // A função loadDefaultData já é chamada no <body> onload.
+        });
+    </script>
+</body>
+</html>
