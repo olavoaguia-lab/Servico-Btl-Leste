@@ -508,8 +508,6 @@
                 grid-template-columns: 1fr;
             }
         }
-
-        /* Seção de análise por local - Removida para simplificar o Dashboard principal, mas mantida no CSS. */
     </style>
 </head>
 <body onload="loadDefaultData()">
@@ -759,7 +757,7 @@
         let filteredData = [];
         let charts = {};
         let unitResourcesData = {};
-        let defaultDataLoaded = false; // Flag para rastrear se os dados de exemplo foram carregados
+        let defaultDataLoaded = false; 
 
         const COLORS = {
             primary: ['#1976d2', '#00bcd4', '#4caf50', '#ff9800', '#f44336', '#9c27b0', '#795548', '#607d8b'],
@@ -810,7 +808,6 @@
         // Converte valor para número (usado para VTR e POG)
         function parseNumber(value) {
             if (!value) return 0;
-            // Tenta converter, tratando a vírgula como separador decimal para robustez
             return parseFloat(String(value).replace(',', '.')) || 0;
         }
 
@@ -821,7 +818,6 @@
 
         // Exibe uma mensagem de alerta temporária
         function showAlert(message, type = 'success') {
-            // Remove qualquer alerta anterior
             document.querySelectorAll('.alert').forEach(a => a.remove());
 
             const alert = document.createElement('div');
@@ -846,14 +842,12 @@
             const validLocais = new Set();
 
             jsonData.forEach(row => {
-                // Usando POSTO/GRAD para melhor aderência à planilha de exemplo
                 const graduacaoRaw = findColumn(row, ['POSTO/GRAD', ...COLUMN_MAP.graduacao]);
                 const unidade = findColumn(row, COLUMN_MAP.unidade);
                 const nome = findColumn(row, COLUMN_MAP.nome);
                 const local = findColumn(row, COLUMN_MAP.local);
                 const status = normalizeStatus(findColumn(row, COLUMN_MAP.status));
 
-                // Apenas pega VTR e POG uma vez por unidade para o total
                 const vtr = parseNumber(findColumn(row, COLUMN_MAP.vtr));
                 const pog = parseNumber(findColumn(row, COLUMN_MAP.pog));
 
@@ -862,8 +856,6 @@
                     if (!unitResourcesData[unidade]) {
                         unitResourcesData[unidade] = { VTR: 0, POG: 0 };
                     }
-                    // O valor do total VTR/POG deve ser o mesmo para todos na mesma unidade na planilha
-                    // Atualiza apenas se o valor for maior que zero para garantir que pega o valor total
                     if (vtr > 0) unitResourcesData[unidade].VTR = vtr;
                     if (pog > 0) unitResourcesData[unidade].POG = pog;
                 }
@@ -884,36 +876,28 @@
                 }
             });
             
-            // Preenche os filtros com base nos dados brutos
             populateFilters(validUnits, validGraduacoes, validLocais);
-            
-            // Aplica os filtros para renderizar a primeira vez
             applyFilters();
             
             showLoading(false);
             showAlert('Dados da Planilha Carregados com Sucesso!', 'success');
         }
 
-        // ... (Funções populateFilters, applyFilters, resetFilters, updateMetrics, renderCharts, createChart, getStatusClass)
-        
         function populateFilters(units, graduacoes, locais) {
             const unidadeFilter = document.getElementById('unidadeFilter');
             const graduacaoFilter = document.getElementById('graduacaoFilter');
             const localFilter = document.getElementById('localFilter');
 
-            // Limpa e repopula Unidade
             unidadeFilter.innerHTML = '<option value="">Todas as Unidades</option>';
             [...units].sort().forEach(unit => {
                 unidadeFilter.innerHTML += `<option value="${unit}">${unit}</option>`;
             });
 
-            // Limpa e repopula Posto/Graduação
             graduacaoFilter.innerHTML = '<option value="">Todos os Postos/Grads</option>';
             [...graduacoes].sort().forEach(grad => {
                 graduacaoFilter.innerHTML += `<option value="${grad}">${grad}</option>`;
             });
 
-            // Limpa e repopula Local de Atuação
             localFilter.innerHTML = '<option value="">Todos os Locais</option>';
             [...locais].sort().forEach(local => {
                 localFilter.innerHTML += `<option value="${local}">${local}</option>`;
@@ -956,11 +940,9 @@
             const totalPresente = filteredData.filter(d => d.status === 'PRESENTE').length;
             const totalAusente = filteredData.length - totalPresente;
 
-            // Soma os recursos das unidades, usando fullData para o total de VTR/POG
             const totalVTR = Object.values(unitResourcesData).reduce((sum, res) => sum + res.VTR, 0);
             const totalPOG = Object.values(unitResourcesData).reduce((sum, res) => sum + res.POG, 0);
 
-            // Atualiza os cartões de métricas
             document.getElementById('totalEfetivo').textContent = totalEfetivo;
             document.getElementById('totalPresente').textContent = totalPresente;
             document.getElementById('totalAusente').textContent = totalAusente;
@@ -1083,7 +1065,7 @@
         function renderTable() {
             const tableBody = document.getElementById('tableBody');
             const tableCount = document.getElementById('tableCount');
-            tableBody.innerHTML = ''; // Limpa a tabela
+            tableBody.innerHTML = ''; 
 
             tableCount.textContent = filteredData.length;
 
@@ -1114,8 +1096,8 @@
         document.getElementById('fileInput').addEventListener('change', handleFile, false);
 
         /**
-         * CORREÇÃO APLICADA AQUI: Mudança na leitura de arquivo para readAsBinaryString
-         * para melhor compatibilidade com CSVs e XLSXs no SheetJS.
+         * CORREÇÃO FINAL E ROBUSTA: Usa readAsArrayBuffer para todos, e aplica codepage 1252 
+         * para CSVs (ISO-8859-1 / Latin-1), uma causa comum de falha em arquivos brasileiros.
          */
         function handleFile(e) {
             const files = e.target.files;
@@ -1125,30 +1107,46 @@
             showLoading(true);
 
             const reader = new FileReader();
+            const fileName = file.name.toLowerCase();
+            const isCSV = fileName.endsWith('.csv');
+
             reader.onload = function(e) {
                 try {
-                    // MUDANÇA DE CORREÇÃO: Lê como string binária, mais robusta para SheetJS.
-                    const data = e.target.result; 
-                    const workbook = XLSX.read(data, { type: 'binary' }); // 'type: binary' corresponde à leitura binária
+                    const data = e.target.result;
+                    const dataArray = new Uint8Array(data);
+                    
+                    let opts = { 
+                        type: 'array'
+                    };
+
+                    if (isCSV) {
+                        // Para CSVs com problemas de codificação (comum em sistemas PT/BR), 
+                        // forçamos a leitura como Latin-1 (Codepage 1252).
+                        opts.codepage = 1252;
+                        // Também podemos adicionar o separador, caso não seja vírgula
+                        // opts.delimiter = ';'; 
+                    }
+                    
+                    const workbook = XLSX.read(dataArray, opts); 
 
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
                     
-                    // Converte para JSON (array de objetos)
+                    // Converte para JSON
                     const json = XLSX.utils.sheet_to_json(worksheet);
                     
                     processData(json);
                     defaultDataLoaded = false;
-                    document.getElementById('fileInput').value = ''; // Limpa o input
+                    document.getElementById('fileInput').value = ''; 
                 } catch (error) {
                     showLoading(false);
-                    // Adiciona instrução para verificar o console
-                    showAlert('Erro ao processar a planilha. Verifique o formato do arquivo e o console (F12) para detalhes.', 'error');
+                    showAlert('Erro ao processar a planilha. Tente salvar o arquivo como "CSV UTF-8" ou use o formato .XLSX. (Detalhes no console).', 'error');
                     console.error("Erro ao ler arquivo:", error);
                 }
             };
-            // CORREÇÃO: Chama readAsBinaryString
-            reader.readAsBinaryString(file);
+            
+            // Lê o arquivo como ArrayBuffer, que é o formato binário mais estável para o SheetJS.
+            reader.readAsArrayBuffer(file);
         }
 
         function exportData() {
@@ -1157,7 +1155,6 @@
                 return;
             }
 
-            // Mapeia os dados filtrados para um formato de exportação
             const exportData = filteredData.map(item => ({
                 'Unidade': item.unidade,
                 'Posto/Graduação': item.graduacao,
@@ -1178,7 +1175,7 @@
         function loadDefaultData() {
              if (defaultDataLoaded) return;
              
-             // Os dados de exemplo extraídos da sua planilha "Controle Serviço Ordinário dia 29.csv"
+             // Dados de exemplo baseados na planilha anexa
              const defaultData = [
                 {"UNIDADE":"Batalhão Leste","TIPO DE SERVIÇO":"VTR","funçâo":"cmt","POSTO/GRAD":"MAJOR","NOME DE GUERRA":"OLAVO","IDENTIDADE":"12345","LOCAL DE ATUAÇÃO":"Comando","STATUS DO EFETIVO":"PRESENTE","VTR (Total)":5,"POG (Total)":5},
                 {"UNIDADE":"Batalhão Leste","TIPO DE SERVIÇO":"POG","funçâo":"motorista","POSTO/GRAD":"MAJOR","NOME DE GUERRA":"BRUNO","IDENTIDADE":"12345","LOCAL DE ATUAÇÃO":"Comando","STATUS DO EFETIVO":"PRESENTE","VTR (Total)":5,"POG (Total)":5},
@@ -1199,9 +1196,8 @@
              showAlert('Dados de Exemplo Carregados (29/11)', 'warning');
         }
 
-        // Inicialização de Gráficos vazios no carregamento, se necessário
         window.addEventListener('load', () => {
-             // A função loadDefaultData já é chamada no <body> onload.
+             // Garante que o dashboard carrega corretamente.
         });
     </script>
 </body>
