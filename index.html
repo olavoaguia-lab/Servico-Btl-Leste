@@ -1096,9 +1096,8 @@
         document.getElementById('fileInput').addEventListener('change', handleFile, false);
 
         /**
-         * CORREÇÃO ULTRA-ROBUSTA: Converte o ArrayBuffer do arquivo para uma String Binária 
-         * explícita antes de passar para o SheetJS. Isso resolve problemas de compatibilidade 
-         * de baixo nível com XLSX e CSV.
+         * CORREÇÃO FINAL: Usa a conversão ArrayBuffer -> Binary String (método mais robusto)
+         * para garantir a leitura de XLSX e CSV, eliminando falhas de compatibilidade.
          */
         function handleFile(e) {
             const files = e.target.files;
@@ -1113,18 +1112,18 @@
                 try {
                     const arrayBuffer = e.target.result;
                     
-                    // --- CORREÇÃO APLICADA AQUI ---
                     // Converte ArrayBuffer para String Binária (método mais confiável para SheetJS)
                     let binaryString = '';
                     const bytes = new Uint8Array(arrayBuffer);
                     const length = bytes.byteLength;
                     for (let i = 0; i < length; i++) {
-                        binaryString += String.fromCharCode(bytes[i]);
+                        // Isso garante que cada byte é lido como um caractere, fundamental para arquivos binários.
+                        binaryString += String.fromCharCode(bytes[i]); 
                     }
 
                     // Lê o Workbook usando a string binária
+                    // Opção 'binary' é crucial aqui.
                     const workbook = XLSX.read(binaryString, { type: 'binary' });
-                    // -----------------------------
 
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
@@ -1132,8 +1131,11 @@
                     // Converte para JSON
                     const json = XLSX.utils.sheet_to_json(worksheet);
                     
+                    // Se o array JSON for vazio, o arquivo pode ter sido lido, mas a aba está vazia/os cabeçalhos não foram encontrados.
                     if (json.length === 0) {
-                        throw new Error("Planilha vazia ou formato de cabeçalho incorreto.");
+                        showAlert(`Planilha lida, mas vazia. Verifique se a primeira aba da planilha contém dados válidos.`, 'warning');
+                        showLoading(false);
+                        return; // Sai da função sem processar
                     }
                     
                     processData(json);
@@ -1141,16 +1143,15 @@
                     document.getElementById('fileInput').value = ''; 
                 } catch (error) {
                     showLoading(false);
-                    // Adiciona dicas de troubleshooting na mensagem de erro
-                    showAlert(`Erro ao processar a planilha. 
-                        1. Verifique se a primeira aba da planilha tem dados. 
-                        2. Tente salvar como CSV UTF-8. 
+                    // Mensagem de erro mais detalhada.
+                    showAlert(`Erro crítico ao ler o arquivo. Motivos comuns: 
+                        1. Planilha corrompida. Tente copiar e colar os dados em uma nova planilha.
+                        2. O cabeçalho não está na primeira linha.
                         (Detalhes técnicos no console).`, 'error');
                     console.error("Erro ao ler arquivo:", error);
                 }
             };
             
-            // Lemos como ArrayBuffer, que é o formato binário ideal para este tipo de conversão
             reader.readAsArrayBuffer(file);
         }
 
