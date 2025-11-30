@@ -774,7 +774,7 @@
 
         // Mapeamento de colunas para robustez contra diferentes nomes de cabeçalho
         const COLUMN_MAP = {
-            unidade: ['Unidade', 'unidade', 'OPM', 'opm'],
+            unidade: ['Unidade', 'unidade', 'OPM', 'opm', 'UNIDADE'],
             graduacao: ['Posto/GRAD', 'Posto/Grad', 'POSTO/GRAD', 'GRADUAÇÃO', 'Graduacao', 'POSTO', 'GRAD'],
             nome: ['Nome de Guerra', 'NomeGuerra', 'NOME DE GUERRA', 'Nome', 'nome'],
             local: ['Local de Atuação', 'LocalAtuacao', 'LOCAL DE ATUAÇÃO', 'Local', 'local'],
@@ -810,6 +810,7 @@
         // Converte valor para número (usado para VTR e POG)
         function parseNumber(value) {
             if (!value) return 0;
+            // Tenta converter, tratando a vírgula como separador decimal para robustez
             return parseFloat(String(value).replace(',', '.')) || 0;
         }
 
@@ -820,6 +821,9 @@
 
         // Exibe uma mensagem de alerta temporária
         function showAlert(message, type = 'success') {
+            // Remove qualquer alerta anterior
+            document.querySelectorAll('.alert').forEach(a => a.remove());
+
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
             alert.textContent = message;
@@ -859,6 +863,7 @@
                         unitResourcesData[unidade] = { VTR: 0, POG: 0 };
                     }
                     // O valor do total VTR/POG deve ser o mesmo para todos na mesma unidade na planilha
+                    // Atualiza apenas se o valor for maior que zero para garantir que pega o valor total
                     if (vtr > 0) unitResourcesData[unidade].VTR = vtr;
                     if (pog > 0) unitResourcesData[unidade].POG = pog;
                 }
@@ -889,6 +894,8 @@
             showAlert('Dados da Planilha Carregados com Sucesso!', 'success');
         }
 
+        // ... (Funções populateFilters, applyFilters, resetFilters, updateMetrics, renderCharts, createChart, getStatusClass)
+        
         function populateFilters(units, graduacoes, locais) {
             const unidadeFilter = document.getElementById('unidadeFilter');
             const graduacaoFilter = document.getElementById('graduacaoFilter');
@@ -1106,6 +1113,10 @@
         // MANIPULAÇÃO DE ARQUIVOS (Planilha)
         document.getElementById('fileInput').addEventListener('change', handleFile, false);
 
+        /**
+         * CORREÇÃO APLICADA AQUI: Mudança na leitura de arquivo para readAsBinaryString
+         * para melhor compatibilidade com CSVs e XLSXs no SheetJS.
+         */
         function handleFile(e) {
             const files = e.target.files;
             if (files.length === 0) return;
@@ -1116,12 +1127,14 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+                    // MUDANÇA DE CORREÇÃO: Lê como string binária, mais robusta para SheetJS.
+                    const data = e.target.result; 
+                    const workbook = XLSX.read(data, { type: 'binary' }); // 'type: binary' corresponde à leitura binária
+
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
                     
-                    // Converte para JSON. header: 1 força a primeira linha como cabeçalho.
+                    // Converte para JSON (array de objetos)
                     const json = XLSX.utils.sheet_to_json(worksheet);
                     
                     processData(json);
@@ -1129,11 +1142,13 @@
                     document.getElementById('fileInput').value = ''; // Limpa o input
                 } catch (error) {
                     showLoading(false);
-                    showAlert('Erro ao processar a planilha. Verifique o formato do arquivo.', 'error');
+                    // Adiciona instrução para verificar o console
+                    showAlert('Erro ao processar a planilha. Verifique o formato do arquivo e o console (F12) para detalhes.', 'error');
                     console.error("Erro ao ler arquivo:", error);
                 }
             };
-            reader.readAsArrayBuffer(file);
+            // CORREÇÃO: Chama readAsBinaryString
+            reader.readAsBinaryString(file);
         }
 
         function exportData() {
@@ -1164,7 +1179,6 @@
              if (defaultDataLoaded) return;
              
              // Os dados de exemplo extraídos da sua planilha "Controle Serviço Ordinário dia 29.csv"
-             // Atenção: A coluna POSTO/GRAD foi usada como 'graduacaoRaw' no processamento.
              const defaultData = [
                 {"UNIDADE":"Batalhão Leste","TIPO DE SERVIÇO":"VTR","funçâo":"cmt","POSTO/GRAD":"MAJOR","NOME DE GUERRA":"OLAVO","IDENTIDADE":"12345","LOCAL DE ATUAÇÃO":"Comando","STATUS DO EFETIVO":"PRESENTE","VTR (Total)":5,"POG (Total)":5},
                 {"UNIDADE":"Batalhão Leste","TIPO DE SERVIÇO":"POG","funçâo":"motorista","POSTO/GRAD":"MAJOR","NOME DE GUERRA":"BRUNO","IDENTIDADE":"12345","LOCAL DE ATUAÇÃO":"Comando","STATUS DO EFETIVO":"PRESENTE","VTR (Total)":5,"POG (Total)":5},
@@ -1187,7 +1201,6 @@
 
         // Inicialização de Gráficos vazios no carregamento, se necessário
         window.addEventListener('load', () => {
-             // Garante que o Chart.js está pronto
              // A função loadDefaultData já é chamada no <body> onload.
         });
     </script>
