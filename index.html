@@ -1096,8 +1096,9 @@
         document.getElementById('fileInput').addEventListener('change', handleFile, false);
 
         /**
-         * CORREÇÃO FINAL E ROBUSTA: Usa readAsArrayBuffer para todos, e aplica codepage 1252 
-         * para CSVs (ISO-8859-1 / Latin-1), uma causa comum de falha em arquivos brasileiros.
+         * CORREÇÃO ULTRA-ROBUSTA: Converte o ArrayBuffer do arquivo para uma String Binária 
+         * explícita antes de passar para o SheetJS. Isso resolve problemas de compatibilidade 
+         * de baixo nível com XLSX e CSV.
          */
         function handleFile(e) {
             const files = e.target.files;
@@ -1107,27 +1108,23 @@
             showLoading(true);
 
             const reader = new FileReader();
-            const fileName = file.name.toLowerCase();
-            const isCSV = fileName.endsWith('.csv');
 
             reader.onload = function(e) {
                 try {
-                    const data = e.target.result;
-                    const dataArray = new Uint8Array(data);
+                    const arrayBuffer = e.target.result;
                     
-                    let opts = { 
-                        type: 'array'
-                    };
-
-                    if (isCSV) {
-                        // Para CSVs com problemas de codificação (comum em sistemas PT/BR), 
-                        // forçamos a leitura como Latin-1 (Codepage 1252).
-                        opts.codepage = 1252;
-                        // Também podemos adicionar o separador, caso não seja vírgula
-                        // opts.delimiter = ';'; 
+                    // --- CORREÇÃO APLICADA AQUI ---
+                    // Converte ArrayBuffer para String Binária (método mais confiável para SheetJS)
+                    let binaryString = '';
+                    const bytes = new Uint8Array(arrayBuffer);
+                    const length = bytes.byteLength;
+                    for (let i = 0; i < length; i++) {
+                        binaryString += String.fromCharCode(bytes[i]);
                     }
-                    
-                    const workbook = XLSX.read(dataArray, opts); 
+
+                    // Lê o Workbook usando a string binária
+                    const workbook = XLSX.read(binaryString, { type: 'binary' });
+                    // -----------------------------
 
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
@@ -1135,17 +1132,25 @@
                     // Converte para JSON
                     const json = XLSX.utils.sheet_to_json(worksheet);
                     
+                    if (json.length === 0) {
+                        throw new Error("Planilha vazia ou formato de cabeçalho incorreto.");
+                    }
+                    
                     processData(json);
                     defaultDataLoaded = false;
                     document.getElementById('fileInput').value = ''; 
                 } catch (error) {
                     showLoading(false);
-                    showAlert('Erro ao processar a planilha. Tente salvar o arquivo como "CSV UTF-8" ou use o formato .XLSX. (Detalhes no console).', 'error');
+                    // Adiciona dicas de troubleshooting na mensagem de erro
+                    showAlert(`Erro ao processar a planilha. 
+                        1. Verifique se a primeira aba da planilha tem dados. 
+                        2. Tente salvar como CSV UTF-8. 
+                        (Detalhes técnicos no console).`, 'error');
                     console.error("Erro ao ler arquivo:", error);
                 }
             };
             
-            // Lê o arquivo como ArrayBuffer, que é o formato binário mais estável para o SheetJS.
+            // Lemos como ArrayBuffer, que é o formato binário ideal para este tipo de conversão
             reader.readAsArrayBuffer(file);
         }
 
@@ -1197,7 +1202,6 @@
         }
 
         window.addEventListener('load', () => {
-             // Garante que o dashboard carrega corretamente.
         });
     </script>
 </body>
