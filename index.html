@@ -18,6 +18,7 @@
             --danger-red: #f44336;
             --purple: #9c27b0;
             --pink: #e91e63;
+            --teal: #009688;
             --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --card-bg: #ffffff;
             --text-primary: #2c3e50;
@@ -101,6 +102,7 @@
         .header-actions { 
             display: flex; 
             gap: 12px; 
+            flex-wrap: wrap;
         }
         .btn { 
             padding: 12px 24px; 
@@ -137,6 +139,10 @@
         }
         .btn-warning {
             background: var(--warning-orange);
+            color: white;
+        }
+        .btn-teal {
+            background: var(--teal);
             color: white;
         }
 
@@ -239,6 +245,7 @@
         .metric-faltas { border-color: var(--warning-orange); color: var(--warning-orange); }
         .metric-unidades { border-color: var(--purple); color: var(--purple); }
         .metric-locais { border-color: var(--pink); color: var(--pink); }
+        .metric-viaturas { border-color: var(--teal); color: var(--teal); }
 
         .main-layout { 
             display: grid; 
@@ -422,6 +429,46 @@
             color: #666; 
         }
 
+        .viaturas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .viatura-card {
+            background: linear-gradient(135deg, var(--teal), #00796b);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+        }
+        
+        .viatura-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .viatura-prefixo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .viatura-count {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 10px 0;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .viatura-desc {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
         .loading-overlay { 
             position: fixed; 
             top: 0; 
@@ -480,6 +527,14 @@
             .main-layout { grid-template-columns: 1fr; }
             .sidebar { position: static; top: auto; }
             .charts-grid { grid-template-columns: 1fr; }
+            .header-actions { justify-content: center; }
+        }
+        
+        @media (max-width: 768px) {
+            .header-content { flex-direction: column; text-align: center; }
+            .header-actions { justify-content: center; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .viaturas-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
         }
     </style>
 </head>
@@ -514,6 +569,9 @@
                 </button>
                 <button class="btn btn-warning" onclick="exportFaltas()">
                     <i class="fas fa-file-excel"></i> Exportar Faltas
+                </button>
+                <button class="btn btn-teal" onclick="exportViaturas()">
+                    <i class="fas fa-car"></i> Exportar Viaturas
                 </button>
                 <button class="btn btn-primary" onclick="clearData()">
                     <i class="fas fa-trash-alt"></i> Limpar Dados
@@ -577,6 +635,15 @@
                 <div class="metric-value" id="totalLocais">0</div>
                 <div class="metric-subtitle">Áreas de atuação</div>
             </div>
+            
+            <div class="metric-card metric-viaturas">
+                <div class="metric-header">
+                    <div class="metric-label">Total de Viaturas</div>
+                    <i class="fas fa-car metric-icon"></i>
+                </div>
+                <div class="metric-value" id="totalViaturas">0</div>
+                <div class="metric-subtitle">Viaturas montadas em serviço</div>
+            </div>
         </div>
 
         <div class="main-layout">
@@ -611,6 +678,13 @@
                     <label for="funcaoFilter">Filtrar por Função:</label>
                     <select id="funcaoFilter" onchange="filterDashboard()">
                         <option value="">Todas as Funções</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="viaturaFilter">Filtrar por Viatura:</label>
+                    <select id="viaturaFilter" onchange="filterDashboard()">
+                        <option value="">Todas as Viaturas</option>
                     </select>
                 </div>
 
@@ -675,6 +749,25 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Novo Painel de Viaturas -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title"><i class="fas fa-car"></i> Distribuição de Viaturas</div>
+                        <div class="local-selector-wrapper">
+                            <label for="topViaturasSelector">Mostrar TOP:</label>
+                            <select id="topViaturasSelector" onchange="updateViaturasDisplay()">
+                                <option value="8">8</option>
+                                <option value="12">12</option>
+                                <option value="5">5</option>
+                                <option value="999">Todas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="viaturas-grid" id="viaturasGrid">
+                        <!-- Viaturas serão inseridas aqui dinamicamente -->
+                    </div>
+                </div>
             </main>
         </div>
 
@@ -690,13 +783,14 @@
                             <th>Posto/Grad</th>
                             <th>Nome de Guerra</th>
                             <th>Função</th>
+                            <th>Viatura</th>
                             <th>Local de Atuação</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody id="detalhesTableBody">
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                            <td colspan="7" style="text-align: center; padding: 40px; color: #7f8c8d;">
                                 Carregue uma planilha para visualizar os dados.
                             </td>
                         </tr>
@@ -721,6 +815,7 @@
         let validGraduacoes = new Set();
         let validLocais = new Set();
         let validFuncoes = new Set();
+        let validViaturas = new Set();
         
         // Mapeamento das colunas (Baseado na imagem fornecida)
         const COLUMN_MAP = {
@@ -807,7 +902,8 @@
                 { id: 'efetivoAusente', value: parseInt(document.getElementById('efetivoAusente').textContent) || 0 },
                 { id: 'totalFaltas', value: parseInt(document.getElementById('totalFaltas').textContent) || 0 },
                 { id: 'totalUnidades', value: parseInt(document.getElementById('totalUnidades').textContent) || 0 },
-                { id: 'totalLocais', value: parseInt(document.getElementById('totalLocais').textContent) || 0 }
+                { id: 'totalLocais', value: parseInt(document.getElementById('totalLocais').textContent) || 0 },
+                { id: 'totalViaturas', value: parseInt(document.getElementById('totalViaturas').textContent) || 0 }
             ];
             
             metrics.forEach(metric => {
@@ -825,6 +921,7 @@
             validGraduacoes = new Set();
             validLocais = new Set();
             validFuncoes = new Set();
+            validViaturas = new Set();
 
             try {
                 jsonData.forEach(row => {
@@ -858,6 +955,7 @@
                     if (graduacao) validGraduacoes.add(graduacao);
                     if (local) validLocais.add(local);
                     if (funcao) validFuncoes.add(funcao);
+                    if (prefixo) validViaturas.add(prefixo);
                 });
 
                 if (fullData.length === 0) {
@@ -882,6 +980,7 @@
             validGraduacoes = new Set();
             validLocais = new Set();
             validFuncoes = new Set();
+            validViaturas = new Set();
             updateFilters(); 
             filterDashboard(); 
             showAlert('🗑️ Dados limpos com sucesso.', 'success');
@@ -916,13 +1015,83 @@
             
             showAlert('⬇️ Relatório de Faltas exportado com sucesso!', 'success');
         }
+        
+        function exportViaturas() {
+            const viaturaCounts = calculateViaturaCounts(fullData);
+            const viaturasData = Object.entries(viaturaCounts).map(([prefixo, count]) => ({
+                Prefixo: prefixo,
+                Quantidade: count,
+                Status: count > 0 ? 'OPERACIONAL' : 'INDISPONÍVEL'
+            }));
+            
+            if (viaturasData.length === 0) {
+                showAlert('⚠️ Nenhuma viatura encontrada.', 'error');
+                return;
+            }
+            
+            const ws = XLSX.utils.json_to_sheet(viaturasData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Relatorio_Viaturas");
+            XLSX.writeFile(wb, "Dashboard_Viaturas_Exportado.xlsx");
+            
+            showAlert('⬇️ Relatório de Viaturas exportado com sucesso!', 'success');
+        }
+        
+        function calculateViaturaCounts(data) {
+            const viaturaCounts = {};
+            data.forEach(item => {
+                if (item.prefixo) {
+                    viaturaCounts[item.prefixo] = (viaturaCounts[item.prefixo] || 0) + 1;
+                }
+            });
+            return viaturaCounts;
+        }
+        
+        function updateViaturasDisplay() {
+            const viaturasGrid = document.getElementById('viaturasGrid');
+            const topN = parseInt(document.getElementById('topViaturasSelector').value);
+            
+            viaturasGrid.innerHTML = '';
+            
+            const viaturaCounts = calculateViaturaCounts(fullData);
+            
+            // Ordenar viaturas por quantidade (maior para menor) e pegar as topN
+            const viaturasArray = Object.entries(viaturaCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, topN);
+            
+            if (viaturasArray.length === 0) {
+                viaturasGrid.innerHTML = '<div class="viatura-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, #95a5a6, #7f8c8d);"><div class="viatura-prefixo">Nenhuma viatura</div><div class="viatura-count">0</div><div class="viatura-desc">Sem dados de viaturas.</div></div>';
+                return;
+            }
+            
+            const colors = ['#009688', '#00796b', '#004d40', '#26a69a', '#4db6ac', '#80cbc4'];
+            
+            viaturasArray.forEach(([prefixo, count], index) => {
+                const viaturaCard = document.createElement('div');
+                viaturaCard.className = 'viatura-card';
+                
+                // Usar cores específicas baseadas no index
+                const colorIndex = index % colors.length;
+                viaturaCard.style.background = `linear-gradient(135deg, ${colors[colorIndex]} 0%, ${colors[(colorIndex + 1) % colors.length]} 100%)`;
+                
+                viaturaCard.innerHTML = `
+                    <div class="viatura-prefixo">${prefixo}</div>
+                    <div class="viatura-count">${count}</div>
+                    <div class="viatura-desc">Policiais na Viatura</div>
+                `;
+                
+                viaturasGrid.appendChild(viaturaCard);
+            });
+        }
 
         function updateFilters() {
             const filters = [
                 { id: 'unidadeFilter', data: Array.from(validUnits).sort() },
                 { id: 'graduacaoFilter', data: Array.from(validGraduacoes).sort() },
                 { id: 'localFilter', data: Array.from(validLocais).sort() },
-                { id: 'funcaoFilter', data: Array.from(validFuncoes).sort() }
+                { id: 'funcaoFilter', data: Array.from(validFuncoes).sort() },
+                { id: 'viaturaFilter', data: Array.from(validViaturas).sort() }
             ];
 
             filters.forEach(filter => {
@@ -934,6 +1103,7 @@
                 else if (filter.id.includes('graduacao')) label = 'Graduações';
                 else if (filter.id.includes('local')) label = 'Locais';
                 else if (filter.id.includes('funcao')) label = 'Funções';
+                else if (filter.id.includes('viatura')) label = 'Viaturas';
                 
                 select.innerHTML = `<option value="">Todas as ${label}</option>`;
                 
@@ -955,6 +1125,7 @@
             document.getElementById('graduacaoFilter').value = '';
             document.getElementById('localFilter').value = '';
             document.getElementById('funcaoFilter').value = '';
+            document.getElementById('viaturaFilter').value = '';
             filterDashboard();
         }
 
@@ -963,18 +1134,21 @@
             const graduacao = document.getElementById('graduacaoFilter').value;
             const local = document.getElementById('localFilter').value;
             const funcao = document.getElementById('funcaoFilter').value;
+            const viatura = document.getElementById('viaturaFilter').value;
 
             const filteredData = fullData.filter(item => {
                 const matchUnidade = !unidade || item.unidade === unidade;
                 const matchGraduacao = !graduacao || item.graduacao === graduacao;
                 const matchLocal = !local || item.local === local;
                 const matchFuncao = !funcao || item.funcao === funcao;
-                return matchUnidade && matchGraduacao && matchLocal && matchFuncao;
+                const matchViatura = !viatura || item.prefixo === viatura;
+                return matchUnidade && matchGraduacao && matchLocal && matchFuncao && matchViatura;
             });
             
             updateMetrics(filteredData);
             updateCharts(filteredData);
             updateTable(filteredData);
+            updateViaturasDisplay();
             updateDateTime();
             
             // Anima as métricas após um pequeno delay para garantir que os valores foram atualizados
@@ -989,6 +1163,9 @@
             
             const unidades = [...new Set(data.map(item => item.unidade))].length;
             const locais = [...new Set(data.map(item => item.local))].length;
+            
+            // Calcular total de viaturas únicas
+            const viaturasUnicas = [...new Set(data.map(item => item.prefixo).filter(Boolean))].length;
 
             document.getElementById('efetivoTotal').textContent = totalEfetivo;
             document.getElementById('efetivoPresente').textContent = presente;
@@ -996,6 +1173,7 @@
             document.getElementById('totalFaltas').textContent = faltas;
             document.getElementById('totalUnidades').textContent = unidades;
             document.getElementById('totalLocais').textContent = locais;
+            document.getElementById('totalViaturas').textContent = viaturasUnicas;
         }
 
         function updateCharts(data) {
@@ -1112,7 +1290,7 @@
             tableBody.innerHTML = ''; 
 
             if (data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: #7f8c8d;">
                     Nenhum dado encontrado para os filtros selecionados.
                 </td></tr>`;
                 return;
@@ -1124,6 +1302,7 @@
                 row.insertCell().textContent = item.graduacao || '-';
                 row.insertCell().textContent = item.nome || '-';
                 row.insertCell().textContent = item.funcao || '-';
+                row.insertCell().textContent = item.prefixo || '-';
                 row.insertCell().textContent = item.local || '-';
                 
                 const statusCell = row.insertCell();
