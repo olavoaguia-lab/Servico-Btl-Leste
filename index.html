@@ -5,23 +5,22 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Dashboard Operacional - Batalhão Leste</title>
 
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
+    /* Nova Paleta de Cores Baseada no Brasão BTL Leste */
     :root{
-      --btl-azul-escuro: #003366;
+      --btl-azul-escuro: #003366; /* Azul Escuro Original */
+      --btl-azul-header: #2B5AA0; /* Azul Sólido Inspirado no Brasão */
       --btl-azul-medio: #0073CF;
       --btl-azul-claro: #7EC8E3;
-      --btl-amarelo: #FFC300;
-      --btl-verde: #1D6A2E;
+      --btl-amarelo: #FFC300; /* Cor para 'Limpar Dados' */
+      --btl-verde: #1D6A2E; /* Cor para 'Exportar' */
       --btl-vermelho: #C62828;
-      --bg-gradient: linear-gradient(135deg,#003366 0%, #0073CF 40%, #1D6A2E 100%);
+      --bg-gradient: radial-gradient(circle at 70% 70%, var(--btl-azul-claro) 0%, #e3f2fd 50%, #f3e5f5 100%);
       --card-bg: #fff;
       --text-primary: #1f2933;
       --text-secondary: #6b7b8b;
@@ -34,14 +33,14 @@
     *{box-sizing:border-box;margin:0;padding:0}
     body{
       font-family: "Segoe UI", Roboto, Arial, sans-serif;
-      background: radial-gradient(circle at top left, #7ec8e3 0,#e3f2fd 35%, #f3e5f5 100%);
+      background: var(--bg-gradient);
       color:var(--text-primary);
       -webkit-font-smoothing:antialiased;
     }
 
     /* HEADER */
     .header{
-      background:var(--bg-gradient);
+      background:var(--btl-azul-header); /* Cor sólida #2B5AA0 */
       color:#fff;
       padding:16px 20px;
       position:sticky;
@@ -57,116 +56,165 @@
     .logo-container{
       width:64px;height:64px;border-radius:50%;
       display:flex;align-items:center;justify-content:center;
-      background: radial-gradient(circle at 30% 30%, #FFC300 0, #C62828 35%, #003366 100%);
+      /* Novo gradiente inspirado no brasão: amarelo, laranja, verde */
+      background: radial-gradient(circle at 30% 30%, var(--btl-amarelo) 0, #FF8C00 35%, var(--btl-verde) 100%);
       border:2px solid rgba(255,255,255,0.7); box-shadow:0 6px 12px rgba(0,0,0,0.35);
     }
     .logo-icon{ font-size:30px;color:#fff; }
     .header-text{ display:flex;flex-direction:column; }
-    .header h1{ font-size:1.15rem; font-weight:700; letter-spacing:0.02em; }
+    .header h1{ font-size:1.15rem; font-weight:700;
+      letter-spacing:0.02em; }
     .header-subtitle{ font-size:0.82rem; opacity:0.95; margin-top:3px }
 
     /* header actions */
-    .header-actions{ display:flex; gap:8px; align-items:center }
-    .btn{ display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:8px 14px; font-weight:700; font-size:0.92rem; cursor:pointer; border:none; box-shadow:var(--shadow-sm); }
+    .header-actions{ display:flex;
+      gap:8px; align-items:center }
+    .btn{ display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:8px 14px; font-weight:700; font-size:0.92rem; cursor:pointer; border:none; box-shadow:var(--shadow-sm);
+    }
     .btn:active{ transform:translateY(1px) }
-    .btn-secondary{ background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.18) }
+    /* Botão 'Carregar Planilha' com estilo secundário */
+    .file-label{ cursor:pointer; display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.18);
+      font-weight:700 }
+    /* Botão 'Exportar Efetivo' com cor verde temática */
     .btn-success{ background:var(--btl-verde); color:#fff }
-    .btn-primary{ background:#fff; color:var(--btl-azul-escuro) }
-    .file-label{ cursor:pointer; display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.12); font-weight:700 }
+    /* Botão 'Limpar Dados' com cor amarela temática */
+    .btn-warning{ background:var(--btl-amarelo); color:var(--btl-azul-escuro); font-weight:900 }
+    
+    /* small-screen hamburger - REMOVIDO */
+    .hamburger{ display:none; }
 
-    /* small-screen hamburger */
-    .hamburger{ display:none; width:var(--touch-size); height:var(--touch-size); align-items:center; justify-content:center; border-radius:8px; background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.07); cursor:pointer }
-    .hamburger:active{ transform:translateY(1px) }
-
-    .container{ max-width:1400px; margin:18px auto; padding:0 18px; }
+    .container{ max-width:1400px; margin:18px auto;
+      padding:0 18px; }
 
     /* METRICS */
     .metrics-grid{
       display:grid;
+      /* Responsivo: 2 colunas em telas médias, 1 coluna em telas pequenas */
       grid-template-columns: repeat( auto-fit, minmax(210px, 1fr) );
       gap:14px;
       margin-bottom:18px;
     }
     .metric-card{
-      background:var(--card-bg); border-radius:12px; padding:14px; box-shadow:var(--shadow-md);
+      background:var(--card-bg); border-radius:12px;
+      padding:14px; box-shadow:var(--shadow-md);
       display:flex; flex-direction:column; gap:8px;
       border-left:5px solid transparent; transition:transform .18s ease, box-shadow .18s ease;
     }
-    .metric-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-lg) }
+    .metric-card:hover{ transform:translateY(-3px);
+      box-shadow:var(--shadow-lg) }
     .metric-header{ display:flex; justify-content:space-between; align-items:flex-start }
-    .metric-label{ font-size:0.78rem; color:var(--text-secondary); font-weight:800; text-transform:uppercase; letter-spacing:0.06em }
+    .metric-label{ font-size:0.78rem; color:var(--text-secondary); font-weight:800; text-transform:uppercase;
+      letter-spacing:0.06em }
     .metric-subtitle{ font-size:0.78rem; color:var(--text-secondary); margin-top:4px; font-weight:600 }
-    .metric-value{ font-size:1.9rem; font-weight:900; color:var(--btl-azul-escuro) }
+    .metric-value{ font-size:1.9rem; font-weight:900;
+      color:var(--btl-azul-escuro) }
 
-    .metric-icon{ width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; }
+    .metric-icon{ width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff;
+    }
     .metric-efetivo{ border-color:var(--btl-azul-medio) }
     .metric-efetivo .metric-icon{ background:linear-gradient(135deg,var(--btl-azul-medio),var(--btl-azul-claro)) }
     .metric-faltas{ border-color:var(--btl-vermelho) }
     .metric-faltas .metric-icon{ background:linear-gradient(135deg,#C62828,#FF7043) }
     .metric-presente{ border-color:var(--btl-verde) }
     .metric-presente .metric-icon{ background:linear-gradient(135deg,var(--btl-verde),#4CAF50) }
-    .metric-viaturas{ border-color:var(--btl-azul-claro) }
-    .metric-viaturas .metric-icon{ background:linear-gradient(135deg,#00796B,#26A69A) }
+    .metric-viaturas{ border-color:var(--btl-amarelo) } /* Cor ajustada */
+    .metric-viaturas .metric-icon{ background:linear-gradient(135deg,var(--btl-amarelo),#FFA000) }
 
-    /* layout principal */
-    .main-layout{ display:grid; grid-template-columns: 270px 1fr; gap:18px; align-items:start }
-
-    /* sidebar */
-    .sidebar{ background:var(--card-bg); padding:14px; border-radius:12px; box-shadow:var(--shadow-md); position:sticky; top:92px; height:fit-content }
-    .sidebar-header{ display:flex; align-items:center; gap:10px; margin-bottom:10px; font-weight:900 }
-    .filter-group{ margin-bottom:12px }
-    .filter-group label{ display:block; font-weight:700; margin-bottom:6px; font-size:0.9rem }
-    .filter-group select{ width:100%; padding:8px 10px; border-radius:8px; border:1px solid #e8e8e8; font-size:0.9rem; background:#fafafa }
-
-    .btn-reset{ width:100%; padding:10px; border-radius:10px; background:#f3f3f3; font-weight:800 }
-
-    /* charts grid */
-    .charts-grid{ display:grid; grid-template-columns: repeat(auto-fit,minmax(420px,1fr)); gap:16px; margin-bottom:18px }
-    .chart-card{ background:var(--card-bg); padding:12px; border-radius:12px; box-shadow:var(--shadow-md) }
-    .chart-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px }
-    .chart-title{ font-weight:800; color:var(--btl-azul-escuro) }
-
-    .chart-wrapper{ height:260px; position:relative }
-
-    /* viaturas */
-    .viaturas-grid{ display:grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-top:8px }
-    .viatura-card{ padding:10px; border-radius:10px; color:#fff; text-align:center; box-shadow:var(--shadow-md) }
-
-    /* table */
-    .table-card{ background:var(--card-bg); padding:12px; border-radius:12px; box-shadow:var(--shadow-md) }
-    .table-wrapper{ overflow:auto; max-height:520px; margin-top:8px }
-    .data-table{ width:100%; border-collapse:collapse; font-size:0.92rem }
-    .data-table thead{ position:sticky; top:0; background:var(--btl-azul-escuro); color:#fff; z-index:10 }
-    .data-table th, .data-table td{ padding:10px 12px; border-bottom:1px solid #f0f0f0; text-align:left }
-    .status-badge{ padding:6px 10px; border-radius:999px; font-weight:800; font-size:0.78rem }
-
-    /* loading & alerts */
-    .loading-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:1000 }
-    .loading-overlay.active{ display:flex }
-    .spinner{ width:56px;height:56px;border-radius:50%;border:6px solid rgba(255,255,255,0.14); border-top-color:#fff; animation:spin 1s linear infinite }
-    @keyframes spin{ to{ transform:rotate(360deg) } }
-
-    .alert-container{ position:fixed; top:88px; right:18px; z-index:150; max-width:320px }
-    .alert{ padding:10px 12px; border-radius:10px; color:#fff; font-weight:800 }
-
-    /* responsiveness */
-    @media(max-width:980px){
-      .main-layout{ grid-template-columns: 1fr; }
-      .sidebar{ position:relative; top:auto; order:2 }
-      .charts-grid{ grid-template-columns: 1fr }
-      .chart-wrapper{ height:320px }
+    /* layout principal - Modificado para 100% vertical no mobile */
+    .main-layout{ 
+      display:grid; 
+      grid-template-columns: 1fr; /* Forçando layout 100% vertical */
+      gap:18px; align-items:start 
     }
 
-    @media(max-width:720px){
-      .header{ padding:12px 10px }
-      .header h1{ font-size:1rem }
-      .hamburger{ display:flex }
-      .header-actions{ display:flex; gap:6px; align-items:center }
-      .file-label{ padding:8px 10px; font-size:0.86rem }
-      .btn{ padding:8px 10px; font-size:0.9rem }
-      .metrics-grid{ gap:10px }
-      .chart-wrapper{ height:260px }
+    /* sidebar - Sempre visível no topo (primeiro elemento) */
+    .sidebar{ 
+      background:var(--card-bg); padding:14px; border-radius:12px; box-shadow:var(--shadow-md);
+      position:static; /* Remove sticky */
+      top:auto; height:fit-content;
+    }
+    .sidebar-header{ display:flex; align-items:center; gap:10px; margin-bottom:10px;
+      font-weight:900 }
+    .filter-group{ margin-bottom:12px }
+    .filter-group label{ display:block; font-weight:700; margin-bottom:6px;
+      font-size:0.9rem }
+    .filter-group select{ width:100%; padding:8px 10px; border-radius:8px; border:1px solid #e8e8e8; font-size:0.9rem;
+      background:#fafafa }
+
+    .btn-reset{ width:100%; padding:10px; border-radius:10px; background:#f3f3f3;
+      font-weight:800 }
+
+    /* charts grid - Adaptado para 1 coluna no mobile */
+    .charts-grid{ display:grid; grid-template-columns: 1fr; /* Forçando 1 coluna */
+      gap:16px;
+      margin-bottom:18px }
+    .chart-card{ background:var(--card-bg); padding:12px; border-radius:12px; box-shadow:var(--shadow-md) }
+    .chart-header{ display:flex; justify-content:space-between; align-items:center;
+      margin-bottom:10px }
+    .chart-title{ font-weight:800; color:var(--btl-azul-escuro) }
+
+    .chart-wrapper{ height:280px; /* Ajuste para melhor visualização vertical */
+      position:relative }
+
+    /* viaturas grid - Adaptado para 2 colunas no mobile */
+    .viaturas-grid{ display:grid; grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); /* Mínimo menor para mobile */
+      gap:12px;
+      margin-top:8px }
+    .viatura-card{ padding:10px; border-radius:10px; color:#fff; text-align:center;
+      box-shadow:var(--shadow-md) }
+
+    /* table */
+    .table-card{ background:var(--card-bg); padding:12px; border-radius:12px;
+      box-shadow:var(--shadow-md) }
+    .table-wrapper{ overflow-x:auto; /* Scroll horizontal apenas quando necessário */
+      max-height:520px; margin-top:8px }
+    .data-table{ min-width:600px; /* Garante scroll horizontal em telas estreitas */
+      width:100%; border-collapse:collapse;
+      font-size:0.92rem }
+    .data-table thead{ position:sticky; top:0; background:var(--btl-azul-escuro); color:#fff;
+      z-index:10 }
+    .data-table th, .data-table td{ padding:10px 12px; border-bottom:1px solid #f0f0f0;
+      text-align:left }
+    .status-badge{ padding:6px 10px; border-radius:999px; font-weight:800;
+      font-size:0.78rem }
+
+    /* loading & alerts */
+    .loading-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center;
+      z-index:1000 }
+    .loading-overlay.active{ display:flex }
+    .spinner{ width:56px;height:56px;border-radius:50%;border:6px solid rgba(255,255,255,0.14); border-top-color:#fff;
+      animation:spin 1s linear infinite }
+    @keyframes spin{ to{ transform:rotate(360deg) } }
+
+    .alert-container{ position:fixed; top:88px;
+      right:18px; z-index:150; max-width:320px }
+    .alert{ padding:10px 12px; border-radius:10px; color:#fff;
+      font-weight:800 }
+
+    /* Responsividade */
+    @media(min-width:768px){ /* Tablet e Desktop */
+      .metrics-grid{
+        grid-template-columns: repeat( auto-fit, minmax(180px, 1fr) ); /* 4 colunas em telas maiores */
+      }
+      .charts-grid{ 
+        grid-template-columns: repeat(auto-fit,minmax(350px,1fr)); /* 2 colunas em telas maiores */
+      }
+      .viaturas-grid{ grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); }
+      .sidebar{ position:sticky; top:92px; height:fit-content } /* Mantém filtros sticky no desktop */
+      .main-layout{ grid-template-columns: 270px 1fr; } /* Layout original para desktop/tablet */
+    }
+
+    @media(max-width:767px){ /* Mobile */
+      .header{ padding:12px 10px; flex-wrap:wrap; }
+      .header-left{ width:100%; justify-content:center; }
+      .header-actions{ width:100%; justify-content:center; gap:8px; margin-top:8px; }
+      .file-label, .btn{ padding:8px 10px; font-size:0.86rem; }
       .logo-container{ width:56px;height:56px }
+      .header h1{ font-size:1rem }
+      .metric-value{ font-size:1.6rem; }
+      /* Sidebar forçado a 100% de largura no topo em mobile */
+      .sidebar{ order:1; }
+      .section{ order:2; }
     }
   </style>
 </head>
@@ -176,9 +224,6 @@
 
   <header class="header" role="banner">
     <div class="header-left">
-      <button class="hamburger" id="hamburgerBtn" aria-label="Abrir filtros">
-        <i class="fas fa-bars"></i>
-      </button>
       <div class="logo-container" aria-hidden="true">
         <i class="fas fa-chart-line logo-icon" title="Análise Operacional"></i>
       </div>
@@ -196,7 +241,7 @@
         <i class="fas fa-download"></i> Exportar Efetivo
       </button>
 
-      <button class="btn btn-primary" onclick="clearData()">
+      <button class="btn btn-warning" onclick="clearData()">
         <i class="fas fa-trash-alt"></i> Limpar Dados
       </button>
     </div>
@@ -252,13 +297,11 @@
     <div class="main-layout">
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header"><i class="fas fa-filter"></i> <strong>Filtros de Análise</strong></div>
-
         <div class="filter-group"><label for="unidadeFilter">Filtrar por OPM:</label><select id="unidadeFilter" onchange="filterDashboard()"><option value="">Todas as OPMs</option></select></div>
         <div class="filter-group"><label for="graduacaoFilter">Filtrar por Graduação:</label><select id="graduacaoFilter" onchange="filterDashboard()"><option value="">Todas as Graduações</option></select></div>
         <div class="filter-group"><label for="localFilter">Filtrar por Local:</label><select id="localFilter" onchange="filterDashboard()"><option value="">Todos os Locais</option></select></div>
         <div class="filter-group"><label for="funcaoFilter">Filtrar por Função:</label><select id="funcaoFilter" onchange="filterDashboard()"><option value="">Todas as Funções</option></select></div>
         <div class="filter-group"><label for="viaturaFilter">Filtrar por Viatura:</label><select id="viaturaFilter" onchange="filterDashboard()"><option value="">Todas as Viaturas</option></select></div>
-
         <button class="btn-reset" onclick="resetFilters()"><i class="fas fa-redo"></i> Limpar Filtros</button>
       </aside>
 
@@ -272,10 +315,7 @@
 
           <div class="chart-card"><div class="chart-header"><div class="chart-title"><i class="fas fa-exclamation-circle"></i> Análise de Faltas</div></div><div class="chart-wrapper"><canvas id="faltasChart"></canvas></div></div>
 
-          <div class="chart-card"><div class="chart-header"><div class="chart-title"><i class="fas fa-tasks"></i> Distribuição por Função</div></div><div class="chart-wrapper"><canvas id="funcaoChart"></canvas></div></div>
-
-          <div class="chart-card"><div class="chart-header"><div class="chart-title"><i class="fas fa-map-marked-alt"></i> Cobertura de Locais (TOP 10)</div></div><div class="chart-wrapper"><canvas id="localChart"></canvas></div></div>
-        </div>
+          </div>
 
         <div class="chart-card">
           <div class="chart-header"><div class="chart-title"><i class="fas fa-car"></i> Distribuição de Viaturas</div>
@@ -300,11 +340,10 @@
   </main>
 
   <script>
-    // ---------- Globais ----------
+    // ---------- Globais (Não Alterado) ----------
     let fullData = [];
     let charts = {};
     let validUnits = new Set(), validGraduacoes = new Set(), validLocais = new Set(), validFuncoes = new Set(), validViaturas = new Set();
-
     const COLUMN_MAP = {
       unidade: 'UNIDADE',
       prefixo: 'PREFIXO',
@@ -315,12 +354,10 @@
       local: 'LOCAL DE ATUAÇÃO',
       status: 'STATUS DO EFETIVO'
     };
-
-    // ---------- Utilidades ----------
+    // ---------- Utilidades (Não Alterado) ----------
     function showLoading(show){
       document.getElementById('loadingOverlay').classList.toggle('active', !!show);
     }
-
     function showAlert(msg, type='success'){
       const c = document.getElementById('alertContainer');
       const d = document.createElement('div');
@@ -330,43 +367,30 @@
       c.appendChild(d);
       setTimeout(()=>{ d.style.opacity = '0'; d.style.transform = 'translateX(40px)'; d.addEventListener('transitionend', ()=>d.remove()) }, 4200);
     }
-
     function updateDateTime(){
       const now = new Date();
       const dateStr = now.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
       const timeStr = now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       document.getElementById('updateTime').textContent = `Atualizado: ${dateStr} • ${timeStr}`;
     }
-
-    // Corrige textos corrompidos por problemas de encoding comum (mojibake)
     function fixEncoding(s){
       if(!s && s!==0) return s;
       let str = String(s);
-      // Correções comuns de mojibake UTF-8 interpretado como Latin1
       const map = {
         'Ã¡':'á','Ã©':'é','Ã­':'í','Ã³':'ó','Ãº':'ú','Ã§':'ç','Ã£':'ã','Ãµ':'õ',
-        'Ãª':'ê','Ã´':'ô','Ã‰':'É','â':"'",'â':'-','â':'—',
+        'Ãª':'ê','Ã´':'ô','Ã‰':'É','â€™':"'",'â€“':'-','â€”':'—',
         'Ãš':'Ú','Ã ': 'Á','Ãª':'ê','Âº':'º','Âª':'ª'
       };
-      // aplicar mapeamento simples
       Object.keys(map).forEach(k => { str = str.split(k).join(map[k]); });
-      // remover caracteres invisíveis
       str = str.replace(/\uFFFD/g,'');
-      // Normalizar espaços
       str = str.replace(/\s+/g,' ').trim();
-      // Most common weird sequences
-      str = str.replace(/Ã/g, ''); // fallback
-      // Corrigir ordinais escritas estranhas, ex: "4 e" -> "4ª" se detectável
+      str = str.replace(/Ã/g, '');
       str = str.replace(/\b([0-9]+)\s*e\b/gi, '$1ª');
       return str;
     }
-
-    // normalize key when aggregating counts: fix encoding and trim
     function normalizeKey(k){
       return fixEncoding(k || '').trim();
     }
-
-    // procura coluna ignorando diferenças de formatação
     function findColumn(row, key){
       const normalizedKey = String(key).toLowerCase().replace(/\s+/g,'').replace(/\W/g,'');
       for(const col in row){
@@ -375,7 +399,6 @@
       }
       return '';
     }
-
     function normalizeStatus(value){
       if(!value) return 'INDETERMINADO';
       const v = String(value).toUpperCase();
@@ -387,11 +410,11 @@
       if(v.includes('FALTA')||v.includes('AUSENTE')) return 'FALTA';
       return 'OUTROS';
     }
-
-    // --------- Processamento da planilha ----------
+    // --------- Processamento da planilha (Não Alterado) ----------
     function processExcelData(jsonData){
       showLoading(true);
-      fullData = []; validUnits = new Set(); validGraduacoes = new Set(); validLocais = new Set(); validFuncoes = new Set(); validViaturas = new Set();
+      fullData = []; validUnits = new Set(); validGraduacoes = new Set(); validLocais = new Set(); validFuncoes = new Set();
+      validViaturas = new Set();
       try{
         jsonData.forEach(row=>{
           let unidade = findColumn(row, COLUMN_MAP.unidade);
@@ -436,23 +459,22 @@
       }catch(err){
         console.error(err);
         showAlert('Erro ao processar planilha: ' + (err.message||err), 'error');
-      }finally{ showLoading(false); }
+      }finally{ showLoading(false);
+      }
     }
-
-    // ---------- Exportação (único botão) ----------
+    // ---------- Exportação (Não Alterado) ----------
     function exportar(){
-      if(!fullData || fullData.length===0){ showAlert('⚠️ Nenhum dado para exportar.', 'error'); return; }
+      if(!fullData || fullData.length===0){ showAlert('⚠️ Nenhum dado para exportar.', 'error');
+      return; }
 
       const efetivoSheet = fullData.map(r=>({
         UNIDADE: r.unidade||'', PREFIXO: r.prefixo||'', FUNCAO: r.funcao||'', GRADUACAO: r.graduacao||'',
         NOME_DE_GUERRA: r.nome||'', IDENTIDADE: r.identidade||'', LOCAL_DE_ATUACAO: r.local||'', STATUS: r.status||'',
         PRESENTE: r.presente||0, AUSENTE: r.ausente||0, FALTA: r.falta||0
       }));
-
       const faltasSheet = fullData.filter(r=>r.falta===1).map(r=>({
         UNIDADE: r.unidade||'', PREFIXO: r.prefixo||'', NOME_DE_GUERRA: r.nome||'', GRADUACAO: r.graduacao||'', FUNCAO: r.funcao||'', LOCAL_DE_ATUACAO: r.local||'', STATUS: r.status||'FALTA'
       }));
-
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(efetivoSheet), 'Efetivo_Total');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(faltasSheet.length?faltasSheet:[{INFO:'Nenhuma falta registrada'}]), 'Faltas');
@@ -461,8 +483,7 @@
       XLSX.writeFile(wb, fname);
       showAlert('⬇️ Exportação: ' + fname, 'success');
     }
-
-    // ---------- filtros / métricas / tabelas / charts ----------
+    // ---------- filtros / métricas / tabelas (Não Alterado) ----------
     function updateFilters(){
       const map = [
         {id:'unidadeFilter', data: Array.from(validUnits).sort()},
@@ -482,21 +503,18 @@
         if(f.data.includes(prev)) sel.value = prev;
       });
     }
-
     function resetFilters(){
       ['unidadeFilter','graduacaoFilter','localFilter','funcaoFilter','viaturaFilter'].forEach(id=>{
         const s = document.getElementById(id); if(s) s.value = '';
       });
       filterDashboard();
     }
-
     function filterDashboard(){
       const unidade = document.getElementById('unidadeFilter').value;
       const graduacao = document.getElementById('graduacaoFilter').value;
       const local = document.getElementById('localFilter').value;
       const funcao = document.getElementById('funcaoFilter').value;
       const viatura = document.getElementById('viaturaFilter').value;
-
       const filtered = fullData.filter(item=>{
         if(unidade && item.unidade !== unidade) return false;
         if(graduacao && item.graduacao !== graduacao) return false;
@@ -505,7 +523,6 @@
         if(viatura && item.prefixo !== viatura) return false;
         return true;
       });
-
       updateMetrics(filtered);
       updateCharts(filtered);
       updateTable(filtered);
@@ -513,14 +530,12 @@
       updateDateTime();
       setTimeout(()=>animateMetrics(),80);
     }
-
     function updateMetrics(data){
       document.getElementById('efetivoTotal').textContent = data.length;
       document.getElementById('efetivoPresente').textContent = data.filter(d=>d.presente===1).length;
       document.getElementById('totalFaltas').textContent = data.filter(d=>d.falta===1).length;
       document.getElementById('totalViaturas').textContent = [...new Set(data.map(d=>d.prefixo).filter(Boolean))].length;
     }
-
     function animateMetrics(){
       ['efetivoTotal','totalFaltas','efetivoPresente','totalViaturas'].forEach(id=>{
         const el = document.getElementById(id);
@@ -534,7 +549,6 @@
         })(t0);
       });
     }
-
     function updateTable(data){
       const tbody = document.getElementById('detalhesTableBody'); tbody.innerHTML = '';
       if(!data || data.length===0){
@@ -555,17 +569,15 @@
         sc.appendChild(span);
       });
     }
-
-    // ---------- CHARTS ----------
+    // ---------- CHARTS (Modificado para remover painéis) ----------
     function drawChart(id, counts, type, label, colors){
-      try{ if(charts[id]) charts[id].destroy(); }catch(e){}
+      try{ if(charts[id]) charts[id].destroy();
+      }catch(e){}
       const el = document.getElementById(id);
       if(!el) return;
-
       // Fix keys for display: some keys could include mojibake; ensure fixed
       const labels = Object.keys(counts).map(k=>normalizeKey(k));
       const data  = Object.values(counts);
-
       const bg = labels.map((_,i)=> colors[i % colors.length]);
 
       charts[id] = new Chart(el.getContext('2d'), {
@@ -578,7 +590,6 @@
         }
       });
     }
-
     function getStatusCounts(data){
       return data.reduce((acc,c)=>{
         const st = c.status || 'OUTROS';
@@ -593,21 +604,19 @@
       const statusCounts = getStatusCounts(data);
       const unidadeCounts = getCountsByField(data,'unidade');
       const graduacaoCounts = getCountsByField(data,'graduacao');
-      const funcaoCounts = getCountsByField(data,'funcao');
-      const localCounts = getCountsByField(data,'local');
-
-      // top10 locais
-      const topLocais = Object.entries(localCounts).sort((a,b)=>b[1]-a[1]).slice(0,10).reduce((acc,[k,v])=>{ acc[k]=v; return acc; }, {});
+      // const funcaoCounts = getCountsByField(data,'funcao'); // REMOVIDO
+      // const localCounts = getCountsByField(data,'local'); // REMOVIDO
+      // const topLocais = Object.entries(localCounts).sort((a,b)=>b[1]-a[1]).slice(0,10).reduce((acc,[k,v])=>{ acc[k]=v; return acc; }, {}); // REMOVIDO
 
       drawChart('statusChart', statusCounts, 'doughnut', 'Distribuição por Status', ['#4caf50','#ffc107','#c62828','#8e24aa','#607d8b','#ff7043']);
       drawChart('unidadeChart', unidadeCounts, 'bar', 'Efetivo por OPM', ['#0073CF']);
       drawChart('graduacaoChart', graduacaoCounts, 'pie', 'Efetivo por Graduação', ['#003366','#0073CF','#FFC300','#1D6A2E','#C62828','#7EC8E3']);
-      drawChart('funcaoChart', funcaoCounts, 'bar', 'Efetivo por Função', ['#1D6A2E']);
-      drawChart('localChart', topLocais, 'bar', 'Efetivo por Local (TOP 10)', ['#C62828']);
-      drawChart('faltasChart', getCountsByField(data,'unidade', true), 'bar', 'Faltas por Unidade', ['#FFC300']); // faltas por unidade usa unidadeCounts filtered earlier
+      // drawChart('funcaoChart', funcaoCounts, 'bar', 'Efetivo por Função', ['#1D6A2E']); // REMOVIDO
+      // drawChart('localChart', topLocais, 'bar', 'Efetivo por Local (TOP 10)', ['#C62828']); // REMOVIDO
+      drawChart('faltasChart', getCountsByField(data,'unidade', true), 'bar', 'Faltas por Unidade', ['#FFC300']);
+      // faltas por unidade usa unidadeCounts filtered earlier
     }
-
-    // ---------- VIATURAS ----------
+    // ---------- VIATURAS (Não Alterado) ----------
     function calculateViaturaCounts(data){
       return data.reduce((acc,c)=>{
         const p = normalizeKey(c.prefixo||'--');
@@ -621,7 +630,7 @@
       const topN = parseInt(document.getElementById('topViaturasSelector').value || '8',10);
       const counts = calculateViaturaCounts(fullData);
       const arr = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,topN);
-      if(arr.length===0){ grid.innerHTML = '<div class="viatura-card" style="grid-column:1/-1;background:linear-gradient(135deg,#95a5a6,#7f8c8d)"><div class="viatura-prefixo">Nenhuma viatura</div><div class="viatura-count">0</div></div>'; return; }
+      if(arr.length===0){ grid.innerHTML = '<div class="viatura-card" style="grid-column:1/-1;background:linear-gradient(135deg,#95a5a6,#7f8c8d)"><div style="font-weight:900">Nenhuma viatura</div><div style="font-size:1.6rem;font-weight:900;margin-top:6px">0</div><div style="opacity:.9;font-size:.86rem;margin-top:6px">Policiais na Viatura</div></div>'; return; }
       const colors = ['#00796B','#004D40','#26A69A','#00695C','#00897B','#009688'];
       arr.forEach(( [prefixo,count],i )=>{
         const card = document.createElement('div'); card.className='viatura-card';
@@ -630,8 +639,7 @@
         grid.appendChild(card);
       });
     }
-
-    // ---------- file input ----------
+    // ---------- file input (Não Alterado) ----------
     document.getElementById('fileInput').addEventListener('change', function(e){
       const file = e.target.files[0];
       if(!file) return;
@@ -653,23 +661,18 @@
       reader.onerror = function(err){ console.error(err); showAlert('Erro ao ler arquivo.', 'error'); showLoading(false); };
       reader.readAsArrayBuffer(file);
     });
-
-    // ---------- init ----------
+    // ---------- init (Modificado para remover toggle sidebar) ----------
     document.addEventListener('DOMContentLoaded', ()=>{
       updateDateTime(); setInterval(updateDateTime,60000);
-      // hamburger toggle for mobile sidebar
-      const hb = document.getElementById('hamburgerBtn'), sidebar = document.getElementById('sidebar');
-      hb && hb.addEventListener('click', ()=>{ sidebar.style.display = (sidebar.style.display === 'none' || !sidebar.style.display) ? 'block' : 'none'; });
-      // ensure sidebar visible on wide screens
-      function adaptSidebar(){ if(window.innerWidth <=720){ sidebar.style.display='none'; } else { sidebar.style.display='block'; } }
-      adaptSidebar(); window.addEventListener('resize', adaptSidebar);
+      // Otimização mobile: Sidebar é sempre visível e empilhado. Sem toggle/hamburger.
     });
 
-    // Expose filterDashboard for selects
+    // Expose functions to window
     window.filterDashboard = filterDashboard;
     window.resetFilters = resetFilters;
     window.exportar = exportar;
-    window.clearData = function(){ fullData=[]; validUnits = new Set(); validGraduacoes = new Set(); validLocais = new Set(); validFuncoes = new Set(); validViaturas = new Set(); updateFilters(); filterDashboard(); showAlert('🗑️ Dados limpos','success'); };
+    window.clearData = function(){ fullData=[]; validUnits = new Set(); validGraduacoes = new Set(); validLocais = new Set(); validFuncoes = new Set();
+      validViaturas = new Set(); updateFilters(); filterDashboard(); showAlert('🗑️ Dados limpos','success'); };
     window.updateViaturasDisplay = updateViaturasDisplay;
   </script>
 </body>
