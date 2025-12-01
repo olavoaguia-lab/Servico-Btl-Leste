@@ -1,1385 +1,676 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Dashboard Operacional - Batalhão Leste</title>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- SheetJS (XLSX) -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-    <style>
-        :root {
-            /* Paleta inspirada no brasão */
-            --btl-azul-escuro: #003366;
-            --btl-azul-medio: #0073CF;
-            --btl-azul-claro: #7EC8E3;
-            --btl-amarelo: #FFC300;
-            --btl-verde: #1D6A2E;
-            --btl-vermelho: #C62828;
-            --btl-branco: #FFFFFF;
-
-            --primary-dark: var(--btl-azul-escuro);
-            --primary-blue: var(--btl-azul-medio);
-            --accent-cyan: var(--btl-azul-claro);
-            --success-green: var(--btl-verde);
-            --warning-orange: var(--btl-amarelo);
-            --danger-red: var(--btl-vermelho);
-
-            --bg-gradient: linear-gradient(135deg, #003366 0%, #0073CF 40%, #1D6A2E 100%);
-            --card-bg: #ffffff;
-            --text-primary: #1f2933;
-            --text-secondary: #6b7b8b;
-
-            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
-            --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.18);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: radial-gradient(circle at top left, #7EC8E3 0, #e3f2fd 35%, #f3e5f5 100%);
-            min-height: 100vh;
-            color: var(--text-primary);
-        }
-
-        .header {
-            background: var(--bg-gradient);
-            color: white;
-            padding: 20px 40px;
-            box-shadow: var(--shadow-lg);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.15);
-        }
-
-        .header-content {
-            max-width: 1800px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .logo-container {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #FFC300 0, #C62828 35%, #003366 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.35);
-            border: 2px solid rgba(255,255,255,0.7);
-        }
-
-        .logo-icon {
-            font-size: 34px;
-            color: #ffffff;
-            text-shadow: 0 3px 6px rgba(0,0,0,0.5);
-        }
-
-        .header-text { display: flex; flex-direction: column; }
-
-        .header h1 {
-            font-size: 1.9rem;
-            font-weight: 700;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            letter-spacing: 0.03em;
-        }
-
-        .header-subtitle {
-            font-size: 0.9rem;
-            opacity: 0.95;
-            margin-top: 4px;
-        }
-
-        .header-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-            justify-content: flex-end;
-        }
-
-        .btn {
-            padding: 10px 18px;
-            border-radius: 999px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-            box-shadow: var(--shadow-sm);
-            white-space: nowrap;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.15);
-            color: #ffffff;
-            border: 1px solid rgba(255,255,255,0.4);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.25);
-        }
-
-        .btn-success {
-            background: var(--success-green);
-            color: #ffffff;
-        }
-
-        .btn-primary {
-            background: #ffffff;
-            color: var(--primary-dark);
-        }
-
-        .container {
-            max-width: 1800px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-
-        .metric-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: var(--shadow-md);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.25s ease;
-            border-left: 5px solid transparent;
-        }
-
-        .metric-card::before {
-            content: '';
-            position: absolute;
-            top: -40px;
-            right: -40px;
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: radial-gradient(circle at center, rgba(255,255,255,0.45), transparent);
-            opacity: 0.7;
-        }
-
-        .metric-card:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .metric-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px;
-        }
-
-        .metric-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-        }
-
-        .metric-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: #ffffff;
-        }
-
-        .metric-value {
-            font-size: 2.4rem;
-            font-weight: 800;
-            color: var(--primary-dark);
-            margin: 6px 0;
-        }
-
-        .metric-subtitle {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        /* Cores dos cards */
-        .metric-efetivo {
-            border-color: var(--primary-blue);
-        }
-        .metric-efetivo .metric-icon {
-            background: linear-gradient(135deg, var(--primary-blue), var(--accent-cyan));
-        }
-
-        .metric-faltas {
-            border-color: var(--danger-red);
-        }
-        .metric-faltas .metric-icon {
-            background: linear-gradient(135deg, #C62828, #FF7043);
-        }
-
-        .metric-presente {
-            border-color: var(--success-green);
-        }
-        .metric-presente .metric-icon {
-            background: linear-gradient(135deg, #1D6A2E, #4CAF50);
-        }
-
-        .metric-viaturas {
-            border-color: var(--accent-cyan);
-        }
-        .metric-viaturas .metric-icon {
-            background: linear-gradient(135deg, #00796B, #26A69A);
-        }
-
-        .main-layout {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 24px;
-            margin-bottom: 24px;
-        }
-
-        .sidebar {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: var(--shadow-md);
-            height: fit-content;
-            position: sticky;
-            top: 120px;
-        }
-
-        .sidebar-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 18px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .sidebar-header i {
-            color: var(--primary-blue);
-        }
-
-        .sidebar-header h3 {
-            font-size: 1rem;
-            font-weight: 700;
-        }
-
-        .filter-group {
-            margin-bottom: 16px;
-        }
-
-        .filter-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            font-size: 0.88rem;
-            color: var(--text-primary);
-        }
-
-        .filter-group select {
-            width: 100%;
-            padding: 10px;
-            border-radius: 10px;
-            border: 2px solid #e0e0e0;
-            background: #fafafa;
-            font-size: 0.88rem;
-            transition: all 0.2s ease;
-        }
-
-        .filter-group select:focus {
-            outline: none;
-            border-color: var(--primary-blue);
-            background: #ffffff;
-        }
-
-        .btn-reset {
-            width: 100%;
-            margin-top: 6px;
-            background: #f5f5f5;
-            color: var(--text-primary);
-            border-radius: 10px;
-        }
-
-        .btn-reset:hover {
-            background: #e0e0e0;
-        }
-
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
-            gap: 22px;
-            margin-bottom: 24px;
-        }
-
-        .chart-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: var(--shadow-md);
-            transition: all 0.2s ease;
-        }
-
-        .chart-card:hover {
-            box-shadow: var(--shadow-lg);
-        }
-
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .chart-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.0rem;
-            font-weight: 700;
-            color: var(--primary-dark);
-        }
-
-        .chart-title i {
-            color: var(--primary-blue);
-        }
-
-        .chart-wrapper {
-            position: relative;
-            height: 280px;
-        }
-
-        .table-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: var(--shadow-md);
-            margin-bottom: 24px;
-        }
-
-        .table-wrapper {
-            max-height: 600px;
-            overflow-y: auto;
-            border-radius: 10px;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        .data-table thead {
-            position: sticky;
-            top: 0;
-            background: var(--primary-dark);
-            color: white;
-            z-index: 10;
-        }
-
-        .data-table th {
-            padding: 12px 16px;
-            text-align: left;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 0.05em;
-        }
-
-        .data-table td {
-            padding: 11px 16px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .data-table tbody tr:hover {
-            background: #f8f9fb;
-        }
-
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            display: inline-block;
-        }
-
-        .status-presente {
-            background: rgba(76, 175, 80, 0.12);
-            color: var(--success-green);
-        }
-
-        .status-ferias {
-            background: rgba(255, 193, 7, 0.16);
-            color: #FF8F00;
-        }
-
-        .status-afastado {
-            background: rgba(198, 40, 40, 0.16);
-            color: var(--danger-red);
-        }
-
-        .status-licenca {
-            background: rgba(156, 39, 176, 0.16);
-            color: #8E24AA;
-        }
-
-        .status-outros {
-            background: rgba(120, 144, 156, 0.16);
-            color: #455A64;
-        }
-
-        .viaturas-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 14px;
-            margin-top: 10px;
-        }
-
-        .viatura-card {
-            background: linear-gradient(135deg, #00796B, #26A69A);
-            color: white;
-            padding: 16px;
-            border-radius: 14px;
-            text-align: center;
-            box-shadow: var(--shadow-md);
-            transition: all 0.2s ease;
-        }
-
-        .viatura-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .viatura-prefixo {
-            font-size: 1.1rem;
-            font-weight: 700;
-        }
-
-        .viatura-count {
-            font-size: 1.8rem;
-            font-weight: 800;
-            margin: 6px 0;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-        }
-
-        .viatura-desc {
-            font-size: 0.82rem;
-            opacity: 0.95;
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.65);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-
-        .loading-overlay.active {
-            display: flex;
-        }
-
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: 4px solid rgba(255,255,255,0.2);
-            border-top-color: #ffffff;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .alert-container {
-            position: fixed;
-            top: 100px;
-            right: 24px;
-            max-width: 420px;
-            z-index: 1000;
-        }
-
-        .alert {
-            padding: 12px 18px;
-            border-radius: 10px;
-            color: #ffffff;
-            font-weight: 600;
-            box-shadow: var(--shadow-lg);
-            margin-bottom: 10px;
-            animation: slideIn 0.25s ease;
-            font-size: 0.88rem;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(400px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .alert-success { background: #1B5E20; }
-        .alert-error { background: #C62828; }
-
-        @media (max-width: 1200px) {
-            .main-layout {
-                grid-template-columns: 1fr;
-            }
-            .sidebar {
-                position: static;
-                top: auto;
-            }
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-            .header-actions {
-                justify-content: center;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                text-align: center;
-            }
-            .logo-section {
-                justify-content: center;
-            }
-            .metrics-grid {
-                grid-template-columns: 1fr;
-            }
-            .viaturas-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            }
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard Operacional - Batalhão Leste</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --btl-azul-escuro: #003366;
+      --btl-azul-medio: #0073CF;
+      --btl-azul-claro: #7EC8E3;
+      --btl-amarelo: #FFC300;
+      --btl-verde: #1D6A2E;
+      --btl-vermelho: #C62828;
+      --bg-gradient: linear-gradient(135deg,#003366 0%, #0073CF 40%, #1D6A2E 100%);
+      --card-bg: #fff;
+      --text-primary: #1f2933;
+      --text-secondary: #6b7b8b;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+      --shadow-md: 0 6px 18px rgba(0,0,0,0.12);
+      --shadow-lg: 0 10px 30px rgba(0,0,0,0.18);
+      --touch-size: 44px;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at top left, #7ec8e3 0,#e3f2fd 35%, #f3e5f5 100%);
+      color:var(--text-primary);
+      -webkit-font-smoothing:antialiased;
+    }
+
+    /* HEADER */
+    .header{
+      background:var(--bg-gradient);
+      color:#fff;
+      padding:16px 20px;
+      position:sticky;
+      top:0;
+      z-index:120;
+      box-shadow:var(--shadow-lg);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .header-left{display:flex;align-items:center;gap:12px}
+    .logo-container{
+      width:64px;height:64px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      background: radial-gradient(circle at 30% 30%, #FFC300 0, #C62828 35%, #003366 100%);
+      border:2px solid rgba(255,255,255,0.7); box-shadow:0 6px 12px rgba(0,0,0,0.35);
+    }
+    .logo-icon{ font-size:30px;color:#fff; }
+    .header-text{ display:flex;flex-direction:column; }
+    .header h1{ font-size:1.15rem; font-weight:700; letter-spacing:0.02em; }
+    .header-subtitle{ font-size:0.82rem; opacity:0.95; margin-top:3px }
+
+    /* header actions */
+    .header-actions{ display:flex; gap:8px; align-items:center }
+    .btn{ display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:8px 14px; font-weight:700; font-size:0.92rem; cursor:pointer; border:none; box-shadow:var(--shadow-sm); }
+    .btn:active{ transform:translateY(1px) }
+    .btn-secondary{ background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.18) }
+    .btn-success{ background:var(--btl-verde); color:#fff }
+    .btn-primary{ background:#fff; color:var(--btl-azul-escuro) }
+    .file-label{ cursor:pointer; display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.12); font-weight:700 }
+
+    /* small-screen hamburger */
+    .hamburger{ display:none; width:var(--touch-size); height:var(--touch-size); align-items:center; justify-content:center; border-radius:8px; background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.07); cursor:pointer }
+    .hamburger:active{ transform:translateY(1px) }
+
+    .container{ max-width:1400px; margin:18px auto; padding:0 18px; }
+
+    /* METRICS */
+    .metrics-grid{
+      display:grid;
+      grid-template-columns: repeat( auto-fit, minmax(210px, 1fr) );
+      gap:14px;
+      margin-bottom:18px;
+    }
+    .metric-card{
+      background:var(--card-bg); border-radius:12px; padding:14px; box-shadow:var(--shadow-md);
+      display:flex; flex-direction:column; gap:8px;
+      border-left:5px solid transparent; transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .metric-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-lg) }
+    .metric-header{ display:flex; justify-content:space-between; align-items:flex-start }
+    .metric-label{ font-size:0.78rem; color:var(--text-secondary); font-weight:800; text-transform:uppercase; letter-spacing:0.06em }
+    .metric-subtitle{ font-size:0.78rem; color:var(--text-secondary); margin-top:4px; font-weight:600 }
+    .metric-value{ font-size:1.9rem; font-weight:900; color:var(--btl-azul-escuro) }
+
+    .metric-icon{ width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; }
+    .metric-efetivo{ border-color:var(--btl-azul-medio) }
+    .metric-efetivo .metric-icon{ background:linear-gradient(135deg,var(--btl-azul-medio),var(--btl-azul-claro)) }
+    .metric-faltas{ border-color:var(--btl-vermelho) }
+    .metric-faltas .metric-icon{ background:linear-gradient(135deg,#C62828,#FF7043) }
+    .metric-presente{ border-color:var(--btl-verde) }
+    .metric-presente .metric-icon{ background:linear-gradient(135deg,var(--btl-verde),#4CAF50) }
+    .metric-viaturas{ border-color:var(--btl-azul-claro) }
+    .metric-viaturas .metric-icon{ background:linear-gradient(135deg,#00796B,#26A69A) }
+
+    /* layout principal */
+    .main-layout{ display:grid; grid-template-columns: 270px 1fr; gap:18px; align-items:start }
+
+    /* sidebar */
+    .sidebar{ background:var(--card-bg); padding:14px; border-radius:12px; box-shadow:var(--shadow-md); position:sticky; top:92px; height:fit-content }
+    .sidebar-header{ display:flex; align-items:center; gap:10px; margin-bottom:10px; font-weight:900 }
+    .filter-group{ margin-bottom:12px }
+    .filter-group label{ display:block; font-weight:700; margin-bottom:6px; font-size:0.9rem }
+    .filter-group select{ width:100%; padding:8px 10px; border-radius:8px; border:1px solid #e8e8e8; font-size:0.9rem; background:#fafafa }
+
+    .btn-reset{ width:100%; padding:10px; border-radius:10px; background:#f3f3f3; font-weight:800 }
+
+    /* charts grid */
+    .charts-grid{ display:grid; grid-template-columns: repeat(auto-fit,minmax(420px,1fr)); gap:16px; margin-bottom:18px }
+    .chart-card{ background:var(--card-bg); padding:12px; border-radius:12px; box-shadow:var(--shadow-md) }
+    .chart-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px }
+    .chart-title{ font-weight:800; color:var(--btl-azul-escuro) }
+
+    .chart-wrapper{ height:260px; position:relative }
+
+    /* viaturas */
+    .viaturas-grid{ display:grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-top:8px }
+    .viatura-card{ padding:10px; border-radius:10px; color:#fff; text-align:center; box-shadow:var(--shadow-md) }
+
+    /* table */
+    .table-card{ background:var(--card-bg); padding:12px; border-radius:12px; box-shadow:var(--shadow-md) }
+    .table-wrapper{ overflow:auto; max-height:520px; margin-top:8px }
+    .data-table{ width:100%; border-collapse:collapse; font-size:0.92rem }
+    .data-table thead{ position:sticky; top:0; background:var(--btl-azul-escuro); color:#fff; z-index:10 }
+    .data-table th, .data-table td{ padding:10px 12px; border-bottom:1px solid #f0f0f0; text-align:left }
+    .status-badge{ padding:6px 10px; border-radius:999px; font-weight:800; font-size:0.78rem }
+
+    /* loading & alerts */
+    .loading-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:1000 }
+    .loading-overlay.active{ display:flex }
+    .spinner{ width:56px;height:56px;border-radius:50%;border:6px solid rgba(255,255,255,0.14); border-top-color:#fff; animation:spin 1s linear infinite }
+    @keyframes spin{ to{ transform:rotate(360deg) } }
+
+    .alert-container{ position:fixed; top:88px; right:18px; z-index:150; max-width:320px }
+    .alert{ padding:10px 12px; border-radius:10px; color:#fff; font-weight:800 }
+
+    /* responsiveness */
+    @media(max-width:980px){
+      .main-layout{ grid-template-columns: 1fr; }
+      .sidebar{ position:relative; top:auto; order:2 }
+      .charts-grid{ grid-template-columns: 1fr }
+      .chart-wrapper{ height:320px }
+    }
+
+    @media(max-width:720px){
+      .header{ padding:12px 10px }
+      .header h1{ font-size:1rem }
+      .hamburger{ display:flex }
+      .header-actions{ display:flex; gap:6px; align-items:center }
+      .file-label{ padding:8px 10px; font-size:0.86rem }
+      .btn{ padding:8px 10px; font-size:0.9rem }
+      .metrics-grid{ gap:10px }
+      .chart-wrapper{ height:260px }
+      .logo-container{ width:56px;height:56px }
+    }
+  </style>
 </head>
 <body>
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner"></div>
-    </div>
-    <div class="alert-container" id="alertContainer"></div>
+  <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+  <div class="alert-container" id="alertContainer"></div>
 
-    <header class="header">
-        <div class="header-content">
-            <div class="logo-section">
-                <div class="logo-container">
-                    <!-- Ícone positivo de gráfico -->
-                    <i class="fas fa-chart-line logo-icon" title="Análise Operacional"></i>
-                </div>
-                <div class="header-text">
-                    <h1>Dashboard Operacional - Batalhão Leste</h1>
-                    <div class="header-subtitle" id="updateTime"></div>
-                </div>
-            </div>
-
-            <div class="header-actions">
-                <input type="file" id="fileInput" style="display: none;" accept=".xlsx, .xls, .csv">
-                <label for="fileInput" class="btn btn-secondary">
-                    <i class="fas fa-file-upload"></i> Carregar Planilha
-                </label>
-
-                <!-- Botão único de exportação -->
-                <button class="btn btn-success" onclick="exportar()">
-                    <i class="fas fa-download"></i> Exportar Efetivo
-                </button>
-
-                <button class="btn btn-primary" onclick="clearData()">
-                    <i class="fas fa-trash-alt"></i> Limpar Dados
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <div class="container">
-        <!-- MÉTRICAS REORGANIZADAS -->
-        <div class="metrics-grid">
-            <!-- 1. Efetivo Total -->
-            <div class="metric-card metric-efetivo">
-                <div class="metric-header">
-                    <div>
-                        <div class="metric-label">Efetivo Total</div>
-                        <div class="metric-subtitle">Total de policiais no Batalhão</div>
-                    </div>
-                    <div class="metric-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                </div>
-                <div class="metric-value" id="efetivoTotal">0</div>
-            </div>
-
-            <!-- 2. Faltas ao Serviço -->
-            <div class="metric-card metric-faltas">
-                <div class="metric-header">
-                    <div>
-                        <div class="metric-label">Faltas ao Serviço</div>
-                        <div class="metric-subtitle">Ausências não justificadas</div>
-                    </div>
-                    <div class="metric-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                </div>
-                <div class="metric-value" id="totalFaltas">0</div>
-            </div>
-
-            <!-- 3. Efetivo Presente -->
-            <div class="metric-card metric-presente">
-                <div class="metric-header">
-                    <div>
-                        <div class="metric-label">Efetivo Presente</div>
-                        <div class="metric-subtitle">Policiais em serviço / guarnição</div>
-                    </div>
-                    <div class="metric-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                </div>
-                <div class="metric-value" id="efetivoPresente">0</div>
-            </div>
-
-            <!-- 4. Total de Viaturas -->
-            <div class="metric-card metric-viaturas">
-                <div class="metric-header">
-                    <div>
-                        <div class="metric-label">Total de Viaturas</div>
-                        <div class="metric-subtitle">Viaturas montadas em serviço</div>
-                    </div>
-                    <div class="metric-icon">
-                        <i class="fas fa-car"></i>
-                    </div>
-                </div>
-                <div class="metric-value" id="totalViaturas">0</div>
-            </div>
-        </div>
-
-        <!-- LAYOUT PRINCIPAL -->
-        <div class="main-layout">
-            <aside class="sidebar">
-                <div class="sidebar-header">
-                    <i class="fas fa-filter"></i>
-                    <h3>Filtros de Análise</h3>
-                </div>
-
-                <div class="filter-group">
-                    <label for="unidadeFilter">Filtrar por OPM:</label>
-                    <select id="unidadeFilter" onchange="filterDashboard()">
-                        <option value="">Todas as OPMs</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="graduacaoFilter">Filtrar por Graduação:</label>
-                    <select id="graduacaoFilter" onchange="filterDashboard()">
-                        <option value="">Todas as Graduações</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="localFilter">Filtrar por Local:</label>
-                    <select id="localFilter" onchange="filterDashboard()">
-                        <option value="">Todos os Locais</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="funcaoFilter">Filtrar por Função:</label>
-                    <select id="funcaoFilter" onchange="filterDashboard()">
-                        <option value="">Todas as Funções</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="viaturaFilter">Filtrar por Viatura:</label>
-                    <select id="viaturaFilter" onchange="filterDashboard()">
-                        <option value="">Todas as Viaturas</option>
-                    </select>
-                </div>
-
-                <button class="btn btn-reset" onclick="resetFilters()">
-                    <i class="fas fa-redo"></i> Limpar Filtros
-                </button>
-            </aside>
-
-            <main>
-                <div class="charts-grid">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <i class="fas fa-shield-alt"></i>
-                                Efetivo por OPM
-                            </div>
-                        </div>
-                        <div class="chart-wrapper">
-                            <canvas id="unidadeChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <i class="fas fa-user-tag"></i>
-                                Status do Efetivo
-                            </div>
-                        </div>
-                        <div class="chart-wrapper">
-                            <canvas id="statusChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <i class="fas fa-star"></i>
-                                Distribuição por Graduação
-                            </div>
-                        </div>
-                        <div class="chart-wrapper">
-                            <canvas id="graduacaoChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <i class="fas fa-exclamation-circle"></i>
-                                Análise de Faltas
-                            </div>
-                        </div>
-                        <div class="chart-wrapper">
-                            <canvas id="faltasChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <i class="fas fa-tasks"></i>
-                                Distribuição por Função
-                            </div>
-                        </div>
-                        <div class="chart-wrapper">
-                            <canvas id="funcaoChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <i class="fas fa-map-marked-alt"></i>
-                                Cobertura de Locais (TOP 10)
-                            </div>
-                        </div>
-                        <div class="chart-wrapper">
-                            <canvas id="localChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Painel de Viaturas -->
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <div class="chart-title">
-                            <i class="fas fa-car"></i>
-                            Distribuição de Viaturas
-                        </div>
-                        <div>
-                            <label for="topViaturasSelector">TOP:</label>
-                            <select id="topViaturasSelector" onchange="updateViaturasDisplay()">
-                                <option value="8">8</option>
-                                <option value="12">12</option>
-                                <option value="5">5</option>
-                                <option value="999">Todas</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="viaturas-grid" id="viaturasGrid"></div>
-                </div>
-            </main>
-        </div>
-
-        <!-- TABELA DETALHADA -->
-        <div class="table-card">
-            <div class="chart-header">
-                <div class="chart-title">
-                    <i class="fas fa-table"></i>
-                    Detalhamento do Efetivo
-                </div>
-            </div>
-            <div class="table-wrapper">
-                <table class="data-table" id="detalhesTable">
-                    <thead>
-                        <tr>
-                            <th>OPM</th>
-                            <th>Posto/Grad</th>
-                            <th>Nome de Guerra</th>
-                            <th>Função</th>
-                            <th>Viatura</th>
-                            <th>Local de Atuação</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detalhesTableBody">
-                        <tr>
-                            <td colspan="7" style="text-align:center; padding:40px; color:#7f8c8d;">
-                                Carregue uma planilha para visualizar os dados.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <header class="header" role="banner">
+    <div class="header-left">
+      <button class="hamburger" id="hamburgerBtn" aria-label="Abrir filtros">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="logo-container" aria-hidden="true">
+        <i class="fas fa-chart-line logo-icon" title="Análise Operacional"></i>
+      </div>
+      <div class="header-text">
+        <h1>Dashboard Operacional - Batalhão Leste</h1>
+        <div class="header-subtitle" id="updateTime">—</div>
+      </div>
     </div>
 
-    <script>
-        // Variáveis globais
-        let fullData = [];
-        let charts = {
-            unidade: null,
-            status: null,
-            graduacao: null,
-            local: null,
-            faltas: null,
-            funcao: null
-        };
-        let validUnits = new Set();
-        let validGraduacoes = new Set();
-        let validLocais = new Set();
-        let validFuncoes = new Set();
-        let validViaturas = new Set();
+    <div class="header-actions" role="toolbar" aria-label="Ações">
+      <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" style="display:none" />
+      <label class="file-label" for="fileInput"><i class="fas fa-file-upload"></i> Carregar Planilha</label>
 
-        const COLUMN_MAP = {
-            unidade: 'UNIDADE',
-            prefixo: 'PREFIXO',
-            funcao: 'FUNÇÃO',
-            graduacao: 'POSTO/GRAD',
-            nome: 'NOME DE GUERRA',
-            identidade: 'IDENTIDADE',
-            local: 'LOCAL DE ATUAÇÃO',
-            status: 'STATUS DO EFETIVO'
-        };
+      <button class="btn btn-success" id="exportBtn" onclick="exportar()">
+        <i class="fas fa-download"></i> Exportar Efetivo
+      </button>
 
-        function showLoading(show) {
-            document.getElementById('loadingOverlay').classList.toggle('active', show);
-        }
+      <button class="btn btn-primary" onclick="clearData()">
+        <i class="fas fa-trash-alt"></i> Limpar Dados
+      </button>
+    </div>
+  </header>
 
-        function showAlert(message, type='success') {
-            const container = document.getElementById('alertContainer');
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type === 'error' ? 'error' : 'success'}`;
-            alert.textContent = message;
-            container.appendChild(alert);
-            setTimeout(() => {
-                alert.style.opacity = '0';
-                alert.style.transform = 'translateX(400px)';
-                alert.addEventListener('transitionend', () => alert.remove());
-            }, 4500);
-        }
+  <main class="container" role="main">
+    <div class="metrics-grid" aria-live="polite">
+      <div class="metric-card metric-efetivo" id="cardEfetivo">
+        <div class="metric-header">
+          <div>
+            <div class="metric-label">Efetivo Total</div>
+            <div class="metric-subtitle">Total de policiais no Batalhão</div>
+          </div>
+          <div class="metric-icon"><i class="fas fa-users"></i></div>
+        </div>
+        <div class="metric-value" id="efetivoTotal">0</div>
+      </div>
 
-        function updateDateTime() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
-            const timeStr = now.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
-            document.getElementById('updateTime').textContent = `Atualizado em: ${dateStr} às ${timeStr}`;
-        }
+      <div class="metric-card metric-faltas">
+        <div class="metric-header">
+          <div>
+            <div class="metric-label">Faltas ao Serviço</div>
+            <div class="metric-subtitle">Ausências não justificadas</div>
+          </div>
+          <div class="metric-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        </div>
+        <div class="metric-value" id="totalFaltas">0</div>
+      </div>
 
-        function findColumn(row, key) {
-            const normalizedKey = key.toLowerCase()
-                .replace(/\s+/g, '')
-                .replace(/\//g,'')
-                .replace(/-/g,'')
-                .replace(/\(|\)/g,'');
-            for (const col in row) {
-                const normalizedCol = col.toLowerCase()
-                    .replace(/\s+/g,'')
-                    .replace(/\//g,'')
-                    .replace(/-/g,'')
-                    .replace(/\(|\)/g,'');
-                if (normalizedCol === normalizedKey) return row[col];
-            }
-            return '';
-        }
+      <div class="metric-card metric-presente">
+        <div class="metric-header">
+          <div>
+            <div class="metric-label">Efetivo Presente</div>
+            <div class="metric-subtitle">Policiais em serviço / guarnição</div>
+          </div>
+          <div class="metric-icon"><i class="fas fa-check-circle"></i></div>
+        </div>
+        <div class="metric-value" id="efetivoPresente">0</div>
+      </div>
 
-        function normalizeStatus(status) {
-            if (!status) return 'INDETERMINADO';
-            const normalized = String(status).toUpperCase().trim();
-            if (normalized.includes('PRESEN')) return 'PRESENTE';
-            if (normalized.includes('FÉRIAS') || normalized.includes('FERIAS')) return 'DE FÉRIAS';
-            if (normalized.includes('AFAST')) return 'AFASTADO';
-            if (normalized.includes('LICENÇA') || normalized.includes('LICENCA')) return 'LICENÇA';
-            if (normalized.includes('DISPENS')) return 'DISPENSADO';
-            if (normalized.includes('FALTA') || normalized.includes('AUSENTE')) return 'FALTA';
-            return 'OUTROS';
-        }
+      <div class="metric-card metric-viaturas">
+        <div class="metric-header">
+          <div>
+            <div class="metric-label">Total de Viaturas</div>
+            <div class="metric-subtitle">Viaturas montadas em serviço</div>
+          </div>
+          <div class="metric-icon"><i class="fas fa-car"></i></div>
+        </div>
+        <div class="metric-value" id="totalViaturas">0</div>
+      </div>
+    </div>
 
-        function animateValue(element, start, end, duration) {
-            let startTS = null;
-            const step = (ts) => {
-                if (!startTS) startTS = ts;
-                const progress = Math.min((ts - startTS) / duration, 1);
-                element.textContent = Math.floor(progress * (end - start) + start);
-                if (progress < 1) window.requestAnimationFrame(step);
-                else element.textContent = end;
-            };
-            window.requestAnimationFrame(step);
-        }
+    <div class="main-layout">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header"><i class="fas fa-filter"></i> <strong>Filtros de Análise</strong></div>
 
-        function animateMetrics() {
-            const metrics = [
-                { id:'efetivoTotal', value: parseInt(document.getElementById('efetivoTotal').textContent) || 0 },
-                { id:'totalFaltas', value: parseInt(document.getElementById('totalFaltas').textContent) || 0 },
-                { id:'efetivoPresente', value: parseInt(document.getElementById('efetivoPresente').textContent) || 0 },
-                { id:'totalViaturas', value: parseInt(document.getElementById('totalViaturas').textContent) || 0 }
-            ];
-            metrics.forEach(m => {
-                const el = document.getElementById(m.id);
-                animateValue(el, 0, m.value, 1000);
+        <div class="filter-group"><label for="unidadeFilter">Filtrar por OPM:</label><select id="unidadeFilter" onchange="filterDashboard()"><option value="">Todas as OPMs</option></select></div>
+        <div class="filter-group"><label for="graduacaoFilter">Filtrar por Graduação:</label><select id="graduacaoFilter" onchange="filterDashboard()"><option value="">Todas as Graduações</option></select></div>
+        <div class="filter-group"><label for="localFilter">Filtrar por Local:</label><select id="localFilter" onchange="filterDashboard()"><option value="">Todos os Locais</option></select></div>
+        <div class="filter-group"><label for="funcaoFilter">Filtrar por Função:</label><select id="funcaoFilter" onchange="filterDashboard()"><option value="">Todas as Funções</option></select></div>
+        <div class="filter-group"><label for="viaturaFilter">Filtrar por Viatura:</label><select id="viaturaFilter" onchange="filterDashboard()"><option value="">Todas as Viaturas</option></select></div>
+
+        <button class="btn-reset" onclick="resetFilters()"><i class="fas fa-redo"></i> Limpar Filtros</button>
+      </aside>
+
+      <section>
+        <div class="charts-grid">
+          <div class="chart-card"><div class="chart-header"><div class="chart-title"><i class="fas fa-shield-alt"></i> Efetivo por OPM</div></div><div class="chart-wrapper"><canvas id="unidadeChart"></canvas></div></div>
+
+          <div class="chart-card"><div class="chart-header"><div class="chart-title"><i class="fas fa-user-tag"></i> Status do Efetivo</div></div><div class="chart-wrapper"><canvas id="statusChart"></canvas></div></div>
+
+          <div class="chart-card"><div class="chart-header"><div class="chart-title"><i class="fas fa-star"></i> Distribuição por Graduação</div></div><div class="chart-wrapper"><canvas id="graduacaoChart"></canvas></div></div>
+
+          <div class="chart-card"><div class="chart-header"><div class="chart-title"><i class="fas fa-exclamation-circle"></i> Análise de Faltas</div></div><div class="chart-wrapper"><canvas id="faltasChart"></canvas></div></div>
+
+          <div class="chart-card"><div class="chart-header"><div class="chart-title"><i class="fas fa-tasks"></i> Distribuição por Função</div></div><div class="chart-wrapper"><canvas id="funcaoChart"></canvas></div></div>
+
+          <div class="chart-card"><div class="chart-header"><div class="chart-title"><i class="fas fa-map-marked-alt"></i> Cobertura de Locais (TOP 10)</div></div><div class="chart-wrapper"><canvas id="localChart"></canvas></div></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title"><i class="fas fa-car"></i> Distribuição de Viaturas</div>
+            <div><label for="topViaturasSelector" style="font-weight:700;margin-right:6px">TOP</label><select id="topViaturasSelector" onchange="updateViaturasDisplay()"><option value="8">8</option><option value="12">12</option><option value="5">5</option><option value="999">Todas</option></select></div>
+          </div>
+          <div class="viaturas-grid" id="viaturasGrid"></div>
+        </div>
+
+        <div class="table-card" style="margin-top:14px">
+          <div class="chart-header"><div class="chart-title"><i class="fas fa-table"></i> Detalhamento do Efetivo</div></div>
+          <div class="table-wrapper">
+            <table class="data-table" id="detalhesTable">
+              <thead>
+                <tr><th>OPM</th><th>Posto/Grad</th><th>Nome de Guerra</th><th>Função</th><th>Viatura</th><th>Local de Atuação</th><th>Status</th></tr>
+              </thead>
+              <tbody id="detalhesTableBody"><tr><td colspan="7" style="text-align:center;padding:40px;color:#7f8c8d">Carregue uma planilha para visualizar os dados.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // ---------- Globais ----------
+    let fullData = [];
+    let charts = {};
+    let validUnits = new Set(), validGraduacoes = new Set(), validLocais = new Set(), validFuncoes = new Set(), validViaturas = new Set();
+
+    const COLUMN_MAP = {
+      unidade: 'UNIDADE',
+      prefixo: 'PREFIXO',
+      funcao: 'FUNÇÃO',
+      graduacao: 'POSTO/GRAD',
+      nome: 'NOME DE GUERRA',
+      identidade: 'IDENTIDADE',
+      local: 'LOCAL DE ATUAÇÃO',
+      status: 'STATUS DO EFETIVO'
+    };
+
+    // ---------- Utilidades ----------
+    function showLoading(show){
+      document.getElementById('loadingOverlay').classList.toggle('active', !!show);
+    }
+
+    function showAlert(msg, type='success'){
+      const c = document.getElementById('alertContainer');
+      const d = document.createElement('div');
+      d.className = 'alert';
+      d.style.background = (type==='error') ? 'var(--btl-vermelho)' : '#1b5e20';
+      d.textContent = msg;
+      c.appendChild(d);
+      setTimeout(()=>{ d.style.opacity = '0'; d.style.transform = 'translateX(40px)'; d.addEventListener('transitionend', ()=>d.remove()) }, 4200);
+    }
+
+    function updateDateTime(){
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+      const timeStr = now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      document.getElementById('updateTime').textContent = `Atualizado: ${dateStr} • ${timeStr}`;
+    }
+
+    // Corrige textos corrompidos por problemas de encoding comum (mojibake)
+    function fixEncoding(s){
+      if(!s && s!==0) return s;
+      let str = String(s);
+      // Correções comuns de mojibake UTF-8 interpretado como Latin1
+      const map = {
+        'Ã¡':'á','Ã©':'é','Ã­':'í','Ã³':'ó','Ãº':'ú','Ã§':'ç','Ã£':'ã','Ãµ':'õ',
+        'Ãª':'ê','Ã´':'ô','Ã‰':'É','â':"'",'â':'-','â':'—',
+        'Ãš':'Ú','Ã ': 'Á','Ãª':'ê','Âº':'º','Âª':'ª'
+      };
+      // aplicar mapeamento simples
+      Object.keys(map).forEach(k => { str = str.split(k).join(map[k]); });
+      // remover caracteres invisíveis
+      str = str.replace(/\uFFFD/g,'');
+      // Normalizar espaços
+      str = str.replace(/\s+/g,' ').trim();
+      // Most common weird sequences
+      str = str.replace(/Ã/g, ''); // fallback
+      // Corrigir ordinais escritas estranhas, ex: "4 e" -> "4ª" se detectável
+      str = str.replace(/\b([0-9]+)\s*e\b/gi, '$1ª');
+      return str;
+    }
+
+    // normalize key when aggregating counts: fix encoding and trim
+    function normalizeKey(k){
+      return fixEncoding(k || '').trim();
+    }
+
+    // procura coluna ignorando diferenças de formatação
+    function findColumn(row, key){
+      const normalizedKey = String(key).toLowerCase().replace(/\s+/g,'').replace(/\W/g,'');
+      for(const col in row){
+        const nc = String(col).toLowerCase().replace(/\s+/g,'').replace(/\W/g,'');
+        if(nc === normalizedKey) return row[col];
+      }
+      return '';
+    }
+
+    function normalizeStatus(value){
+      if(!value) return 'INDETERMINADO';
+      const v = String(value).toUpperCase();
+      if(v.includes('PRESEN')) return 'PRESENTE';
+      if(v.includes('FÉRIAS')||v.includes('FERIAS')) return 'DE FÉRIAS';
+      if(v.includes('AFAST')) return 'AFASTADO';
+      if(v.includes('LICEN')) return 'LICENÇA';
+      if(v.includes('DISPENS')) return 'DISPENSADO';
+      if(v.includes('FALTA')||v.includes('AUSENTE')) return 'FALTA';
+      return 'OUTROS';
+    }
+
+    // --------- Processamento da planilha ----------
+    function processExcelData(jsonData){
+      showLoading(true);
+      fullData = []; validUnits = new Set(); validGraduacoes = new Set(); validLocais = new Set(); validFuncoes = new Set(); validViaturas = new Set();
+      try{
+        jsonData.forEach(row=>{
+          let unidade = findColumn(row, COLUMN_MAP.unidade);
+          let prefixo = findColumn(row, COLUMN_MAP.prefixo);
+          let funcao = findColumn(row, COLUMN_MAP.funcao);
+          let graduacao = findColumn(row, COLUMN_MAP.graduacao);
+          let nome = findColumn(row, COLUMN_MAP.nome);
+          let identidade = findColumn(row, COLUMN_MAP.identidade);
+          let local = findColumn(row, COLUMN_MAP.local);
+          let statusRaw = findColumn(row, COLUMN_MAP.status);
+
+          // aplicar correção de encoding em campos textuais
+          unidade = normalizeKey(unidade);
+          prefixo = normalizeKey(prefixo);
+          funcao = normalizeKey(funcao);
+          graduacao = normalizeKey(graduacao);
+          nome = normalizeKey(nome);
+          identidade = normalizeKey(identidade);
+          local = normalizeKey(local);
+          const status = normalizeStatus(statusRaw);
+
+          if(unidade && nome){
+            fullData.push({
+              unidade, prefixo, funcao, graduacao, nome, identidade, local, status,
+              presente: status === 'PRESENTE' ? 1 : 0,
+              ausente: status !== 'PRESENTE' ? 1 : 0,
+              falta: status === 'FALTA' ? 1 : 0
             });
-        }
+          }
 
-        function processExcelData(jsonData) {
-            showLoading(true);
-            fullData = [];
-            validUnits = new Set();
-            validGraduacoes = new Set();
-            validLocais = new Set();
-            validFuncoes = new Set();
-            validViaturas = new Set();
-
-            try {
-                jsonData.forEach(row => {
-                    const unidade = findColumn(row, COLUMN_MAP.unidade);
-                    const prefixo = findColumn(row, COLUMN_MAP.prefixo);
-                    const funcao = findColumn(row, COLUMN_MAP.funcao);
-                    const graduacao = findColumn(row, COLUMN_MAP.graduacao);
-                    const nome = findColumn(row, COLUMN_MAP.nome);
-                    const identidade = findColumn(row, COLUMN_MAP.identidade);
-                    const local = findColumn(row, COLUMN_MAP.local);
-                    const statusRaw = findColumn(row, COLUMN_MAP.status);
-                    const status = normalizeStatus(statusRaw);
-
-                    if (unidade && nome) {
-                        fullData.push({
-                            unidade,
-                            prefixo,
-                            funcao,
-                            graduacao,
-                            nome,
-                            identidade,
-                            local,
-                            status,
-                            presente: status === 'PRESENTE' ? 1 : 0,
-                            ausente: status !== 'PRESENTE' ? 1 : 0,
-                            falta: status === 'FALTA' ? 1 : 0
-                        });
-                    }
-
-                    if (unidade) validUnits.add(unidade);
-                    if (graduacao) validGraduacoes.add(graduacao);
-                    if (local) validLocais.add(local);
-                    if (funcao) validFuncoes.add(funcao);
-                    if (prefixo) validViaturas.add(prefixo);
-                });
-
-                if (fullData.length === 0) {
-                    throw new Error('Nenhum dado de efetivo válido encontrado. Verifique se as colunas UNIDADE e NOME DE GUERRA estão preenchidas.');
-                }
-
-                updateFilters();
-                filterDashboard();
-                showAlert(`✅ Sucesso! ${fullData.length} registros processados.`, 'success');
-            } catch (err) {
-                console.error(err);
-                showAlert('❌ Erro ao processar dados: ' + err.message, 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        function clearData() {
-            fullData = [];
-            validUnits = new Set();
-            validGraduacoes = new Set();
-            validLocais = new Set();
-            validFuncoes = new Set();
-            validViaturas = new Set();
-            updateFilters();
-            filterDashboard();
-            showAlert('🗑️ Dados limpos com sucesso.', 'success');
-        }
-
-        // Exportação unificada: Efetivo_Total + Faltas
-        function exportar() {
-            if (!fullData || fullData.length === 0) {
-                showAlert('⚠️ Nenhum dado para exportar.', 'error');
-                return;
-            }
-
-            const efetivoSheetData = fullData.map(r => ({
-                UNIDADE: r.unidade || '',
-                PREFIXO: r.prefixo || '',
-                FUNCAO: r.funcao || '',
-                GRADUACAO: r.graduacao || '',
-                NOME_DE_GUERRA: r.nome || '',
-                IDENTIDADE: r.identidade || '',
-                LOCAL_DE_ATUACAO: r.local || '',
-                STATUS: r.status || '',
-                PRESENTE: r.presente || 0,
-                AUSENTE: r.ausente || 0,
-                FALTA: r.falta || 0
-            }));
-
-            const faltasSheetData = fullData
-                .filter(r => r.falta === 1)
-                .map(r => ({
-                    UNIDADE: r.unidade || '',
-                    PREFIXO: r.prefixo || '',
-                    NOME_DE_GUERRA: r.nome || '',
-                    GRADUACAO: r.graduacao || '',
-                    FUNCAO: r.funcao || '',
-                    LOCAL_DE_ATUACAO: r.local || '',
-                    STATUS: r.status || 'FALTA'
-                }));
-
-            const wb = XLSX.utils.book_new();
-            const ws1 = XLSX.utils.json_to_sheet(efetivoSheetData);
-            XLSX.utils.book_append_sheet(wb, ws1, 'Efetivo_Total');
-
-            const ws2 = XLSX.utils.json_to_sheet(
-                faltasSheetData.length ? faltasSheetData : [{ INFO: 'Nenhuma falta registrada no período.' }]
-            );
-            XLSX.utils.book_append_sheet(wb, ws2, 'Faltas');
-
-            const filename = `Dashboard_Efetivo_${(new Date()).toISOString().slice(0,10)}.xlsx`;
-            XLSX.writeFile(wb, filename);
-
-            showAlert('⬇️ Exportação concluída: ' + filename, 'success');
-        }
-
-        function calculateViaturaCounts(data) {
-            const viaturaCounts = {};
-            data.forEach(item => {
-                if (item.prefixo) {
-                    viaturaCounts[item.prefixo] = (viaturaCounts[item.prefixo] || 0) + 1;
-                }
-            });
-            return viaturaCounts;
-        }
-
-        function updateViaturasDisplay() {
-            const viaturasGrid = document.getElementById('viaturasGrid');
-            const topN = parseInt(document.getElementById('topViaturasSelector').value);
-            viaturasGrid.innerHTML = '';
-
-            const viaturaCounts = calculateViaturaCounts(fullData);
-            const viaturasArray = Object.entries(viaturaCounts)
-                .sort((a,b)=>b[1]-a[1])
-                .slice(0, topN);
-
-            if (viaturasArray.length === 0) {
-                viaturasGrid.innerHTML = '<div class="viatura-card" style="grid-column:1/-1;background:linear-gradient(135deg,#95a5a6,#7f8c8d);"><div class="viatura-prefixo">Nenhuma viatura</div><div class="viatura-count">0</div><div class="viatura-desc">Sem dados de viaturas.</div></div>';
-                return;
-            }
-
-            const colors = ['#00796B', '#004D40', '#26A69A', '#00695C', '#00897B', '#009688'];
-
-            viaturasArray.forEach(([prefixo, count], index) => {
-                const card = document.createElement('div');
-                card.className = 'viatura-card';
-                const colorIndex = index % colors.length;
-                card.style.background = `linear-gradient(135deg, ${colors[colorIndex]} 0%, ${colors[(colorIndex+1)%colors.length]} 100%)`;
-                card.innerHTML = `
-                    <div class="viatura-prefixo">${prefixo}</div>
-                    <div class="viatura-count">${count}</div>
-                    <div class="viatura-desc">Policiais na Viatura</div>
-                `;
-                viaturasGrid.appendChild(card);
-            });
-        }
-
-        function updateFilters() {
-            const filters = [
-                { id:'unidadeFilter', data:Array.from(validUnits).sort() },
-                { id:'graduacaoFilter', data:Array.from(validGraduacoes).sort() },
-                { id:'localFilter', data:Array.from(validLocais).sort() },
-                { id:'funcaoFilter', data:Array.from(validFuncoes).sort() },
-                { id:'viaturaFilter', data:Array.from(validViaturas).sort() }
-            ];
-
-            filters.forEach(filter => {
-                const select = document.getElementById(filter.id);
-                if (!select) return;
-                const prev = select.value;
-                let label = '';
-                if (filter.id.includes('unidade')) label = 'OPMs';
-                else if (filter.id.includes('graduacao')) label = 'Graduações';
-                else if (filter.id.includes('local')) label = 'Locais';
-                else if (filter.id.includes('funcao')) label = 'Funções';
-                else if (filter.id.includes('viatura')) label = 'Viaturas';
-
-                select.innerHTML = `<option value="">Todas as ${label}</option>`;
-                filter.data.forEach(item => {
-                    const opt = document.createElement('option');
-                    opt.value = item;
-                    opt.textContent = item;
-                    select.appendChild(opt);
-                });
-                if (filter.data.includes(prev)) select.value = prev;
-            });
-        }
-
-        function resetFilters() {
-            ['unidadeFilter','graduacaoFilter','localFilter','funcaoFilter','viaturaFilter'].forEach(id => {
-                const s = document.getElementById(id);
-                if (s) s.value = '';
-            });
-            filterDashboard();
-        }
-
-        function filterDashboard() {
-            const unidade = document.getElementById('unidadeFilter').value;
-            const graduacao = document.getElementById('graduacaoFilter').value;
-            const local = document.getElementById('localFilter').value;
-            const funcao = document.getElementById('funcaoFilter').value;
-            const viatura = document.getElementById('viaturaFilter').value;
-
-            const filteredData = fullData.filter(item => {
-                const matchUnidade = !unidade || item.unidade === unidade;
-                const matchGraduacao = !graduacao || item.graduacao === graduacao;
-                const matchLocal = !local || item.local === local;
-                const matchFuncao = !funcao || item.funcao === funcao;
-                const matchViatura = !viatura || item.prefixo === viatura;
-                return matchUnidade && matchGraduacao && matchLocal && matchFuncao && matchViatura;
-            });
-
-            updateMetrics(filteredData);
-            updateCharts(filteredData);
-            updateTable(filteredData);
-            updateViaturasDisplay();
-            updateDateTime();
-            setTimeout(animateMetrics, 80);
-        }
-
-        function updateMetrics(data) {
-            const totalEfetivo = data.length;
-            const presente = data.filter(p => p.presente === 1).length;
-            const faltas = data.filter(f => f.falta === 1).length;
-            const viaturasUnicas = [...new Set(data.map(item=>item.prefixo).filter(Boolean))].length;
-
-            document.getElementById('efetivoTotal').textContent = totalEfetivo;
-            document.getElementById('efetivoPresente').textContent = presente;
-            document.getElementById('totalFaltas').textContent = faltas;
-            document.getElementById('totalViaturas').textContent = viaturasUnicas;
-        }
-
-        function updateCharts(data) {
-            const statusCounts = data.reduce((acc,curr)=>{ acc[curr.status] = (acc[curr.status]||0)+1; return acc; }, {});
-            const unidadeCounts = data.reduce((acc,curr)=>{ acc[curr.unidade] = (acc[curr.unidade]||0)+1; return acc; }, {});
-            const graduacaoCounts = data.reduce((acc,curr)=>{ acc[curr.graduacao] = (acc[curr.graduacao]||0)+1; return acc; }, {});
-            const funcaoCounts = data.reduce((acc,curr)=>{ acc[curr.funcao] = (acc[curr.funcao]||0)+1; return acc; }, {});
-            const localCounts = data.reduce((acc,curr)=>{ acc[curr.local] = (acc[curr.local]||0)+1; return acc; }, {});
-            const topLocais = Object.entries(localCounts)
-                .sort((a,b)=>b[1]-a[1])
-                .slice(0,10)
-                .reduce((acc,[k,v])=>{ acc[k]=v; return acc; }, {});
-
-            const faltasPorUnidade = data
-                .filter(item => item.falta === 1)
-                .reduce((acc,curr)=>{ acc[curr.unidade] = (acc[curr.unidade]||0)+1; return acc; }, {});
-
-            drawChart('statusChart', statusCounts, 'doughnut', 'Distribuição por Status', [
-                '#4CAF50', '#FFC107', '#C62828', '#8E24AA', '#607D8B', '#FF7043'
-            ]);
-            drawChart('unidadeChart', unidadeCounts, 'bar', 'Efetivo por OPM', ['#0073CF']);
-            drawChart('graduacaoChart', graduacaoCounts, 'pie', 'Efetivo por Graduação', [
-                '#003366', '#0073CF', '#FFC300', '#1D6A2E', '#C62828', '#7EC8E3'
-            ]);
-            drawChart('funcaoChart', funcaoCounts, 'bar', 'Efetivo por Função', ['#1D6A2E']);
-            drawChart('localChart', topLocais, 'bar', 'Efetivo por Local (TOP 10)', ['#C62828']);
-            drawChart('faltasChart', faltasPorUnidade, 'bar', 'Faltas por Unidade', ['#FFC300']);
-        }
-
-        function getStatusColor(status) {
-            switch ((status || '').toUpperCase()) {
-                case 'PRESENTE': return '#4CAF50';
-                case 'DE FÉRIAS': return '#FFC107';
-                case 'AFASTADO': return '#C62828';
-                case 'LICENÇA': return '#8E24AA';
-                case 'FALTA': return '#FF7043';
-                case 'DISPENSADO': return '#757575';
-                case 'INDETERMINADO': return '#455A64';
-                default: return '#90A4AE';
-            }
-        }
-
-        function drawChart(canvasId, counts, type, label, defaultColors) {
-            try {
-                if (charts[canvasId]) charts[canvasId].destroy();
-            } catch (e) {}
-
-            const canvas = document.getElementById(canvasId);
-            if (!canvas) return;
-
-            const ctx = canvas.getContext('2d');
-            const labels = Object.keys(counts);
-            const data = Object.values(counts);
-
-            let backgroundColors = [];
-            if (canvasId === 'statusChart') {
-                backgroundColors = labels.map(getStatusColor);
-            } else {
-                backgroundColors = labels.map((_,i)=> defaultColors[i % defaultColors.length]);
-            }
-
-            charts[canvasId] = new Chart(ctx, {
-                type,
-                data: {
-                    labels,
-                    datasets: [{
-                        label,
-                        data,
-                        backgroundColor: backgroundColors,
-                        borderColor: '#ffffff',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: (type === 'bar' || type === 'line') ? {
-                        y: { beginAtZero: true, ticks: { precision: 0 } }
-                    } : {},
-                    plugins: {
-                        legend: {
-                            position: (type === 'doughnut' || type === 'pie') ? 'right' : 'top',
-                            labels: {
-                                boxWidth: 12,
-                                font: { size: 11 }
-                            }
-                        },
-                        title: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) label += ': ';
-                                    if (context.parsed !== null) {
-                                        label += context.parsed.toLocaleString('pt-BR');
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateTable(data) {
-            const tableBody = document.getElementById('detalhesTableBody');
-            tableBody.innerHTML = '';
-
-            if (!data || data.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="7" style="text-align:center; padding:40px; color:#7f8c8d;">
-                            Nenhum dado encontrado para os filtros selecionados.
-                        </td>
-                    </tr>`;
-                return;
-            }
-
-            data.forEach(item => {
-                const row = tableBody.insertRow();
-                row.insertCell().textContent = item.unidade || '-';
-                row.insertCell().textContent = item.graduacao || '-';
-                row.insertCell().textContent = item.nome || '-';
-                row.insertCell().textContent = item.funcao || '-';
-                row.insertCell().textContent = item.prefixo || '-';
-                row.insertCell().textContent = item.local || '-';
-
-                const statusCell = row.insertCell();
-                const badge = document.createElement('span');
-                const cls = (item.status || '').toLowerCase().replace(/\s+/g,'-').replace('de-férias','ferias');
-
-                badge.className = `status-badge status-${cls}`;
-                badge.textContent = item.status || '-';
-                statusCell.appendChild(badge);
-            });
-        }
-
-        document.getElementById('fileInput').addEventListener('change', function(evt) {
-            const file = evt.target.files[0];
-            if (!file) return;
-            showLoading(true);
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type:'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw:false });
-                    if (!jsonData || jsonData.length === 0) {
-                        throw new Error('A planilha está vazia ou não contém dados válidos.');
-                    }
-                    processExcelData(jsonData);
-                } catch (err) {
-                    console.error(err);
-                    showAlert('❌ Erro ao ler arquivo: ' + err.message, 'error');
-                    showLoading(false);
-                }
-            };
-            reader.onerror = function(err) {
-                console.error(err);
-                showAlert('❌ Erro ao ler o arquivo selecionado.', 'error');
-                showLoading(false);
-            };
-            reader.readAsArrayBuffer(file);
+          if(unidade) validUnits.add(unidade);
+          if(graduacao) validGraduacoes.add(graduacao);
+          if(local) validLocais.add(local);
+          if(funcao) validFuncoes.add(funcao);
+          if(prefixo) validViaturas.add(prefixo);
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            updateDateTime();
-            setInterval(updateDateTime, 60000);
-            filterDashboard();
+        if(fullData.length === 0) throw new Error('Nenhum registro válido encontrado. Verifique as colunas UNIDADE e NOME DE GUERRA.');
+        updateFilters();
+        filterDashboard();
+        showAlert(`✅ ${fullData.length} registros processados.`, 'success');
+      }catch(err){
+        console.error(err);
+        showAlert('Erro ao processar planilha: ' + (err.message||err), 'error');
+      }finally{ showLoading(false); }
+    }
+
+    // ---------- Exportação (único botão) ----------
+    function exportar(){
+      if(!fullData || fullData.length===0){ showAlert('⚠️ Nenhum dado para exportar.', 'error'); return; }
+
+      const efetivoSheet = fullData.map(r=>({
+        UNIDADE: r.unidade||'', PREFIXO: r.prefixo||'', FUNCAO: r.funcao||'', GRADUACAO: r.graduacao||'',
+        NOME_DE_GUERRA: r.nome||'', IDENTIDADE: r.identidade||'', LOCAL_DE_ATUACAO: r.local||'', STATUS: r.status||'',
+        PRESENTE: r.presente||0, AUSENTE: r.ausente||0, FALTA: r.falta||0
+      }));
+
+      const faltasSheet = fullData.filter(r=>r.falta===1).map(r=>({
+        UNIDADE: r.unidade||'', PREFIXO: r.prefixo||'', NOME_DE_GUERRA: r.nome||'', GRADUACAO: r.graduacao||'', FUNCAO: r.funcao||'', LOCAL_DE_ATUACAO: r.local||'', STATUS: r.status||'FALTA'
+      }));
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(efetivoSheet), 'Efetivo_Total');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(faltasSheet.length?faltasSheet:[{INFO:'Nenhuma falta registrada'}]), 'Faltas');
+
+      const fname = `Relatorio_BTL_Leste_${(new Date()).toISOString().slice(0,10)}.xlsx`;
+      XLSX.writeFile(wb, fname);
+      showAlert('⬇️ Exportação: ' + fname, 'success');
+    }
+
+    // ---------- filtros / métricas / tabelas / charts ----------
+    function updateFilters(){
+      const map = [
+        {id:'unidadeFilter', data: Array.from(validUnits).sort()},
+        {id:'graduacaoFilter', data: Array.from(validGraduacoes).sort()},
+        {id:'localFilter', data: Array.from(validLocais).sort()},
+        {id:'funcaoFilter', data: Array.from(validFuncoes).sort()},
+        {id:'viaturaFilter', data: Array.from(validViaturas).sort()}
+      ];
+      map.forEach(f=>{
+        const sel = document.getElementById(f.id);
+        if(!sel) return;
+        const prev = sel.value;
+        sel.innerHTML = `<option value="">Todas</option>`;
+        f.data.forEach(item=>{
+          const opt = document.createElement('option'); opt.value = item; opt.textContent = item; sel.appendChild(opt);
         });
-    </script>
+        if(f.data.includes(prev)) sel.value = prev;
+      });
+    }
+
+    function resetFilters(){
+      ['unidadeFilter','graduacaoFilter','localFilter','funcaoFilter','viaturaFilter'].forEach(id=>{
+        const s = document.getElementById(id); if(s) s.value = '';
+      });
+      filterDashboard();
+    }
+
+    function filterDashboard(){
+      const unidade = document.getElementById('unidadeFilter').value;
+      const graduacao = document.getElementById('graduacaoFilter').value;
+      const local = document.getElementById('localFilter').value;
+      const funcao = document.getElementById('funcaoFilter').value;
+      const viatura = document.getElementById('viaturaFilter').value;
+
+      const filtered = fullData.filter(item=>{
+        if(unidade && item.unidade !== unidade) return false;
+        if(graduacao && item.graduacao !== graduacao) return false;
+        if(local && item.local !== local) return false;
+        if(funcao && item.funcao !== funcao) return false;
+        if(viatura && item.prefixo !== viatura) return false;
+        return true;
+      });
+
+      updateMetrics(filtered);
+      updateCharts(filtered);
+      updateTable(filtered);
+      updateViaturasDisplay();
+      updateDateTime();
+      setTimeout(()=>animateMetrics(),80);
+    }
+
+    function updateMetrics(data){
+      document.getElementById('efetivoTotal').textContent = data.length;
+      document.getElementById('efetivoPresente').textContent = data.filter(d=>d.presente===1).length;
+      document.getElementById('totalFaltas').textContent = data.filter(d=>d.falta===1).length;
+      document.getElementById('totalViaturas').textContent = [...new Set(data.map(d=>d.prefixo).filter(Boolean))].length;
+    }
+
+    function animateMetrics(){
+      ['efetivoTotal','totalFaltas','efetivoPresente','totalViaturas'].forEach(id=>{
+        const el = document.getElementById(id);
+        if(!el) return;
+        const val = parseInt(el.textContent)||0;
+        let start = 0; const dur = 700; const t0 = performance.now();
+        (function step(t){
+          const p = Math.min((t-t0)/dur,1);
+          el.textContent = Math.floor(p*val);
+          if(p<1) requestAnimationFrame(step); else el.textContent = val;
+        })(t0);
+      });
+    }
+
+    function updateTable(data){
+      const tbody = document.getElementById('detalhesTableBody'); tbody.innerHTML = '';
+      if(!data || data.length===0){
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#7f8c8d">Nenhum dado encontrado para os filtros selecionados.</td></tr>`;
+        return;
+      }
+      data.forEach(item=>{
+        const r = tbody.insertRow();
+        r.insertCell().textContent = item.unidade || '-';
+        r.insertCell().textContent = item.graduacao || '-';
+        r.insertCell().textContent = item.nome || '-';
+        r.insertCell().textContent = item.funcao || '-';
+        r.insertCell().textContent = item.prefixo || '-';
+        r.insertCell().textContent = item.local || '-';
+        const sc = r.insertCell();
+        const span = document.createElement('span'); span.className = 'status-badge';
+        span.textContent = item.status || '-';
+        sc.appendChild(span);
+      });
+    }
+
+    // ---------- CHARTS ----------
+    function drawChart(id, counts, type, label, colors){
+      try{ if(charts[id]) charts[id].destroy(); }catch(e){}
+      const el = document.getElementById(id);
+      if(!el) return;
+
+      // Fix keys for display: some keys could include mojibake; ensure fixed
+      const labels = Object.keys(counts).map(k=>normalizeKey(k));
+      const data  = Object.values(counts);
+
+      const bg = labels.map((_,i)=> colors[i % colors.length]);
+
+      charts[id] = new Chart(el.getContext('2d'), {
+        type,
+        data: { labels, datasets:[{ label, data, backgroundColor:bg, borderColor:'#fff', borderWidth:1 }] },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          scales: (type==='bar'||type==='line') ? { y:{ beginAtZero:true, ticks:{ precision:0 } } } : {},
+          plugins:{ legend:{ position: (type==='pie'||type==='doughnut')?'right':'top' } }
+        }
+      });
+    }
+
+    function getStatusCounts(data){
+      return data.reduce((acc,c)=>{
+        const st = c.status || 'OUTROS';
+        acc[st] = (acc[st]||0)+1; return acc;
+      },{});
+    }
+    function getCountsByField(data, field){
+      return data.reduce((acc,c)=>{ const key = normalizeKey(c[field]||'--'); acc[key] = (acc[key]||0)+1; return acc; }, {});
+    }
+
+    function updateCharts(data){
+      const statusCounts = getStatusCounts(data);
+      const unidadeCounts = getCountsByField(data,'unidade');
+      const graduacaoCounts = getCountsByField(data,'graduacao');
+      const funcaoCounts = getCountsByField(data,'funcao');
+      const localCounts = getCountsByField(data,'local');
+
+      // top10 locais
+      const topLocais = Object.entries(localCounts).sort((a,b)=>b[1]-a[1]).slice(0,10).reduce((acc,[k,v])=>{ acc[k]=v; return acc; }, {});
+
+      drawChart('statusChart', statusCounts, 'doughnut', 'Distribuição por Status', ['#4caf50','#ffc107','#c62828','#8e24aa','#607d8b','#ff7043']);
+      drawChart('unidadeChart', unidadeCounts, 'bar', 'Efetivo por OPM', ['#0073CF']);
+      drawChart('graduacaoChart', graduacaoCounts, 'pie', 'Efetivo por Graduação', ['#003366','#0073CF','#FFC300','#1D6A2E','#C62828','#7EC8E3']);
+      drawChart('funcaoChart', funcaoCounts, 'bar', 'Efetivo por Função', ['#1D6A2E']);
+      drawChart('localChart', topLocais, 'bar', 'Efetivo por Local (TOP 10)', ['#C62828']);
+      drawChart('faltasChart', getCountsByField(data,'unidade', true), 'bar', 'Faltas por Unidade', ['#FFC300']); // faltas por unidade usa unidadeCounts filtered earlier
+    }
+
+    // ---------- VIATURAS ----------
+    function calculateViaturaCounts(data){
+      return data.reduce((acc,c)=>{
+        const p = normalizeKey(c.prefixo||'--');
+        if(!p) return acc;
+        acc[p] = (acc[p]||0)+1; return acc;
+      },{});
+    }
+    function updateViaturasDisplay(){
+      const grid = document.getElementById('viaturasGrid');
+      grid.innerHTML = '';
+      const topN = parseInt(document.getElementById('topViaturasSelector').value || '8',10);
+      const counts = calculateViaturaCounts(fullData);
+      const arr = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,topN);
+      if(arr.length===0){ grid.innerHTML = '<div class="viatura-card" style="grid-column:1/-1;background:linear-gradient(135deg,#95a5a6,#7f8c8d)"><div class="viatura-prefixo">Nenhuma viatura</div><div class="viatura-count">0</div></div>'; return; }
+      const colors = ['#00796B','#004D40','#26A69A','#00695C','#00897B','#009688'];
+      arr.forEach(( [prefixo,count],i )=>{
+        const card = document.createElement('div'); card.className='viatura-card';
+        card.style.background = `linear-gradient(135deg, ${colors[i%colors.length]}, ${colors[(i+1)%colors.length]})`;
+        card.innerHTML = `<div style="font-weight:900">${prefixo}</div><div style="font-size:1.6rem;font-weight:900;margin-top:6px">${count}</div><div style="opacity:.9;font-size:.86rem;margin-top:6px">Policiais na Viatura</div>`;
+        grid.appendChild(card);
+      });
+    }
+
+    // ---------- file input ----------
+    document.getElementById('fileInput').addEventListener('change', function(e){
+      const file = e.target.files[0];
+      if(!file) return;
+      showLoading(true);
+      const reader = new FileReader();
+      reader.onload = function(evt){
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type:'array' });
+          const first = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[first];
+          const json = XLSX.utils.sheet_to_json(sheet, { raw:false });
+          if(!json || json.length===0) throw new Error('Planilha vazia.');
+          processExcelData(json);
+        } catch(err){
+          console.error(err); showAlert('Erro ao ler arquivo: '+ (err.message||err), 'error'); showLoading(false);
+        }
+      };
+      reader.onerror = function(err){ console.error(err); showAlert('Erro ao ler arquivo.', 'error'); showLoading(false); };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // ---------- init ----------
+    document.addEventListener('DOMContentLoaded', ()=>{
+      updateDateTime(); setInterval(updateDateTime,60000);
+      // hamburger toggle for mobile sidebar
+      const hb = document.getElementById('hamburgerBtn'), sidebar = document.getElementById('sidebar');
+      hb && hb.addEventListener('click', ()=>{ sidebar.style.display = (sidebar.style.display === 'none' || !sidebar.style.display) ? 'block' : 'none'; });
+      // ensure sidebar visible on wide screens
+      function adaptSidebar(){ if(window.innerWidth <=720){ sidebar.style.display='none'; } else { sidebar.style.display='block'; } }
+      adaptSidebar(); window.addEventListener('resize', adaptSidebar);
+    });
+
+    // Expose filterDashboard for selects
+    window.filterDashboard = filterDashboard;
+    window.resetFilters = resetFilters;
+    window.exportar = exportar;
+    window.clearData = function(){ fullData=[]; validUnits = new Set(); validGraduacoes = new Set(); validLocais = new Set(); validFuncoes = new Set(); validViaturas = new Set(); updateFilters(); filterDashboard(); showAlert('🗑️ Dados limpos','success'); };
+    window.updateViaturasDisplay = updateViaturasDisplay;
+  </script>
 </body>
 </html>
